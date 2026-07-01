@@ -15,12 +15,12 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend.Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./:/app
+      - ./frontend:/app
       - /app/node_modules
       - /app/.next
     environment:

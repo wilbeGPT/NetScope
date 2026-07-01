@@ -2,12 +2,12 @@ import { Activity, Maximize2, Network, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RttLineChart } from "@/components/rtt-line-chart"
-import { JitterBoxPlot } from "@/components/jitter-box-plot"
-import { CriticalNodesTable } from "@/components/critical-nodes-table"
+import { RttPerHopChart } from "@/components/charts/RttPerHopChart"
+import { JitterBoxPlot } from "@/components/charts/JitterBoxPlot"
+import { CriticalNodesTable } from "@/components/charts/CriticalNodesTable"
 import { FaseResponse } from "@/lib/types"
 
-export function Phase4View({ data }: { data?: FaseResponse }) {
+export function Fase4View({ data }: { data?: FaseResponse }) {
   const probes = data?.metricas_resumen.probes ?? 42
   const targets = data?.metricas_resumen.targets ?? 187
   const anomalias = data?.metricas_resumen.anomalias ?? 9
@@ -76,7 +76,7 @@ export function Phase4View({ data }: { data?: FaseResponse }) {
             </Button>
           </CardHeader>
           <CardContent className="pt-5">
-            <RttLineChart data={data?.series_chart} />
+            <RttPerHopChart data={data?.series_chart} />
           </CardContent>
         </Card>
 

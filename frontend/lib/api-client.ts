@@ -38,3 +38,16 @@ export async function getPhaseResult(invId: number, phaseNumber: number): Promis
   if (!res.ok) throw new Error("Error getting phase result")
   return res.json()
 }
+
+export async function sendChatMessage(invId: number, message: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/chat/ask`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ investigation_id: invId, message }),
+  })
+  if (!res.ok) throw new Error("Failed to send message")
+  const data = await res.json()
+  return data.reply
+}

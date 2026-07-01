@@ -31,7 +31,7 @@ const chartConfig = {
   Digicel: { label: "Digicel SV", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
-export function RttLineChart({ data = defaultData }: { data?: any[] }) {
+export function RttPerHopChart({ data = defaultData }: { data?: any[] }) {
   // Generate dynamic chart config and lines based on data keys
   const keys = data.length > 0 ? Object.keys(data[0]).filter(k => k !== "hop") : []
   const dynamicConfig = keys.reduce((acc, key, i) => {

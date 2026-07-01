@@ -3,18 +3,18 @@
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 
-import { useState, useEffect } from "react"
+
 import { Activity, BarChart3, FileCheck2, GitBranch, Network, Radar, ShieldCheck } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { AiChatPanel } from "@/components/ai-chat-panel"
-import { Phase4View } from "@/components/phase-4-view"
-import { Fase1View } from "@/components/Fase1View"
-import { Fase2View } from "@/components/Fase2View"
-import { Fase3View } from "@/components/Fase3View"
-import { Fase5View } from "@/components/Fase5View"
-import { PhasePlaceholder } from "@/components/phase-placeholder"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { AiChatPanel } from "@/components/chat/ai-chat-panel"
+import { Fase4View } from "@/components/phases/Fase4View"
+import { Fase1View } from "@/components/phases/Fase1View"
+import { Fase2View } from "@/components/phases/Fase2View"
+import { Fase3View } from "@/components/phases/Fase3View"
+import { Fase5View } from "@/components/phases/Fase5View"
+import { PhaseEmpty } from "@/components/phases/PhaseEmpty"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { getInvestigation, getPhaseResult, runPhase } from "@/lib/api-client"
 import { FaseResponse, Investigation } from "@/lib/types"
 
@@ -157,7 +157,7 @@ function PageContent() {
                 {fase1Data ? (
                   <Fase1View data={fase1Data} />
                 ) : (
-                  <PhasePlaceholder
+                  <PhaseEmpty
                     phase="Fase 1"
                     title="Validación de Integridad"
                     description="Verificación de consistencia y completitud de las mediciones de RIPE Atlas antes del análisis estadístico."
@@ -170,7 +170,7 @@ function PageContent() {
                 {fase2Data ? (
                   <Fase2View data={fase2Data} />
                 ) : (
-                  <PhasePlaceholder
+                  <PhaseEmpty
                     phase="Fase 2"
                     title="Construcción de Línea Base RTT"
                     description="Cálculo de métricas base de latencia por probe y target para identificar el comportamiento normal de la red."
@@ -183,7 +183,7 @@ function PageContent() {
                 {fase3Data ? (
                   <Fase3View data={fase3Data} />
                 ) : (
-                  <PhasePlaceholder
+                  <PhaseEmpty
                     phase="Fase 3"
                     title="Mapeo ASN"
                     description="Asociación de cada hop con su Sistema Autónomo (AS) y propietario para reconstruir la topología lógica."
@@ -194,9 +194,9 @@ function PageContent() {
               </TabsContent>
               <TabsContent value="fase-4" className="mt-0">
                 {fase4Data ? (
-                  <Phase4View data={fase4Data} />
+                  <Fase4View data={fase4Data} />
                 ) : (
-                  <PhasePlaceholder
+                  <PhaseEmpty
                     phase="Fase 4"
                     title="Detección de Path Inflation"
                     description="Comparación de trayectorias geográficas vs. lógicas en mediciones para identificar desvíos."
@@ -209,7 +209,7 @@ function PageContent() {
                 {fase5Data ? (
                   <Fase5View data={fase5Data} />
                 ) : (
-                  <PhasePlaceholder
+                  <PhaseEmpty
                     phase="Fase 5"
                     title="Análisis de Estabilidad Temporal"
                     description="Evaluación de la persistencia del path inflation a lo largo del tiempo y detección de variaciones de ruta."

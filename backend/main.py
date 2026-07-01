@@ -5,7 +5,7 @@ import os
 
 from core.database import engine
 from core import models
-from routers import investigations, chat
+from routers import investigations, chat, analyze, export
 
 # Automatically create all tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
@@ -21,13 +21,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve generated R plots
+# Serve generated R plots via explicit router
 os.makedirs("./data/exports", exist_ok=True)
-app.mount("/exports", StaticFiles(directory="./data/exports"), name="exports")
+app.include_router(export.router, prefix="/exports", tags=["Exports"])
 
 # Include routers
 app.include_router(investigations.router, prefix="/api/investigations", tags=["Investigations"])
+app.include_router(analyze.router, prefix="/api/investigations", tags=["Analyze"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+
 
 @app.get("/api/health")
 def health_check():

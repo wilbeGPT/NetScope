@@ -1,0 +1,9 @@
+---
+title: "Reporte Académico Path Inflation"
+author: "Wilber"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Introducción
+Análisis estadístico generado con NetScope.
