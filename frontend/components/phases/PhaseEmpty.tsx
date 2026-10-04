@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 /**
- * PhaseEmpty — estado "Esta fase aún no se ha ejecutado" + botón Ejecutar.
- * Reemplaza/alias de PhasePlaceholder con el nombre canónico del contexto.
+ * PhaseEmpty - estado "Esta fase aun no se ha ejecutado" + boton Ejecutar.
+ * Reemplaza/alias de PhasePlaceholder con el nombre canonico del contexto.
  */
 export function PhaseEmpty({
   phase,
@@ -46,7 +46,7 @@ export function PhaseEmpty({
             <Icon className="h-3 w-3" aria-hidden="true" />
             {phase}
           </Badge>
-          <span className="font-mono text-[11px] text-muted-foreground">metodología</span>
+          <span className="font-mono text-[11px] text-muted-foreground">metodologia</span>
         </div>
         <h2 className="text-xl font-semibold tracking-tight text-balance">{title}</h2>
         <p className="text-sm text-muted-foreground text-pretty">{description}</p>
@@ -57,9 +57,9 @@ export function PhaseEmpty({
           <EmptyMedia variant="icon">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </EmptyMedia>
-          <EmptyTitle>Esta fase aún no se ha ejecutado</EmptyTitle>
+          <EmptyTitle>Esta fase aun no se ha ejecutado</EmptyTitle>
           <EmptyDescription>
-            Carga las mediciones JSON correspondientes y ejecuta esta etapa de la metodología para
+            Carga las mediciones JSON correspondientes y ejecuta esta etapa de la metodologia para
             visualizar los resultados.
           </EmptyDescription>
         </EmptyHeader>

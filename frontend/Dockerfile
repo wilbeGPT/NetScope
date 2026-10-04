@@ -1,9 +1,17 @@
 FROM node:22-alpine
 
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable pnpm && pnpm install
+
+RUN pnpm install --frozen-lockfile \
+    && mkdir -p /opt/node_modules \
+    && cp -a node_modules/. /opt/node_modules/
+
+COPY . .
 
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+
+CMD ["pnpm", "dev", "--hostname", "0.0.0.0"]

@@ -1,53 +1,67 @@
 "use client"
 
-// Custom SVG box plot since Recharts has no native box plot.
-// Each entry contains quartile statistics derived from RIPE Atlas jitter samples.
-type BoxStat = {
-  isp: string
-  min: number
-  q1: number
-  median: number
-  q3: number
-  max: number
-  outliers: number[]
-  color: string
+import { BoxStat } from "@/lib/types"
+
+function numeric(value: unknown): number | null {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
-const defaultStats: BoxStat[] = [
-  { isp: "Tigo", min: 1.2, q1: 4.8, median: 8.6, q3: 14.2, max: 22.4, outliers: [31.5, 38.7], color: "var(--chart-1)" },
-  { isp: "Claro", min: 0.9, q1: 3.6, median: 6.4, q3: 11.8, max: 19.1, outliers: [27.3], color: "var(--chart-2)" },
-  { isp: "Movistar", min: 0.6, q1: 2.4, median: 4.2, q3: 7.6, max: 13.4, outliers: [21.8], color: "var(--chart-3)" },
-  { isp: "Digicel", min: 1.5, q1: 5.4, median: 9.8, q3: 16.4, max: 25.7, outliers: [34.2, 41.6, 47.8], color: "var(--chart-4)" },
-]
+function normalizeStat(item: BoxStat): BoxStat | null {
+  const min = numeric(item.min)
+  const q1 = numeric(item.q1)
+  const median = numeric(item.median)
+  const q3 = numeric(item.q3)
+  const max = numeric(item.max)
+  if (min === null || q1 === null || median === null || q3 === null || max === null) return null
 
-const Y_MAX = 50
-const Y_TICKS = [0, 10, 20, 30, 40, 50]
+  return {
+    ...item,
+    min,
+    q1,
+    median,
+    q3,
+    max,
+    outliers: Array.isArray(item.outliers) ? item.outliers.map(numeric).filter((value): value is number => value !== null) : [],
+    color: item.color || "var(--chart-1)",
+  }
+}
 
-export function JitterBoxPlot({ stats = defaultStats }: { stats?: BoxStat[] }) {
-  // viewBox-based responsive SVG
+export function JitterBoxPlot({ stats = [] }: { stats?: BoxStat[] }) {
+  const safeStats = stats.map(normalizeStat).filter((item): item is BoxStat => item !== null)
+
+  if (!safeStats.length) {
+    return <p className="py-10 text-center text-sm text-muted-foreground">Sin datos de jitter disponibles.</p>
+  }
+
   const width = 560
   const height = 280
   const padding = { top: 16, right: 16, bottom: 36, left: 44 }
   const innerW = width - padding.left - padding.right
   const innerH = height - padding.top - padding.bottom
-  const colWidth = innerW / stats.length
+  const maxValue = Math.max(
+    1,
+    ...safeStats.flatMap((s) => [s.min, s.q1, s.median, s.q3, s.max, ...s.outliers]),
+  )
+  const yMax = Math.ceil(maxValue / 10) * 10
+  const yTicks = Array.from({ length: 6 }, (_, i) => Math.round((yMax / 5) * i))
+  const colWidth = innerW / safeStats.length
   const boxWidth = Math.min(72, colWidth * 0.55)
 
-  const yScale = (v: number) => padding.top + innerH - (v / Y_MAX) * innerH
+  const yScale = (value: number) => padding.top + innerH - (Math.min(value, yMax) / yMax) * innerH
 
   return (
     <div className="w-full">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="Box plot de distribución de jitter por ISP"
+        aria-label="Boxplot de distribucion de jitter por proveedor"
         className="h-[280px] w-full"
       >
-        {/* Y axis grid + ticks */}
-        {Y_TICKS.map((t) => {
-          const y = yScale(t)
+        {yTicks.map((tick) => {
+          const y = yScale(tick)
           return (
-            <g key={t}>
+            <g key={tick}>
               <line
                 x1={padding.left}
                 x2={width - padding.right}
@@ -64,96 +78,82 @@ export function JitterBoxPlot({ stats = defaultStats }: { stats?: BoxStat[] }) {
                 fontFamily="var(--font-mono)"
                 fill="var(--muted-foreground)"
               >
-                {t}
+                {tick}
               </text>
             </g>
           )
         })}
 
-        {/* Y axis label */}
+        <line x1={padding.left} x2={padding.left} y1={padding.top} y2={height - padding.bottom} stroke="var(--border)" />
+        <line x1={padding.left} x2={width - padding.right} y1={height - padding.bottom} y2={height - padding.bottom} stroke="var(--border)" />
+
         <text
-          transform={`translate(12 ${padding.top + innerH / 2}) rotate(-90)`}
+          transform={`translate(14 ${padding.top + innerH / 2}) rotate(-90)`}
           textAnchor="middle"
           fontSize="11"
           fill="var(--muted-foreground)"
         >
-          Jitter (ms)
+          Jitter / dispersion (ms)
         </text>
 
-        {/* Boxes per ISP */}
-        {stats.map((s, i) => {
-          const cx = padding.left + colWidth * i + colWidth / 2
-          const xLeft = cx - boxWidth / 2
-          const yMin = yScale(s.min)
-          const yQ1 = yScale(s.q1)
-          const yMed = yScale(s.median)
-          const yQ3 = yScale(s.q3)
-          const yMax = yScale(s.max)
+        {safeStats.map((stat, index) => {
+          const centerX = padding.left + colWidth * index + colWidth / 2
+          const yMin = yScale(stat.min)
+          const yQ1 = yScale(stat.q1)
+          const yMedian = yScale(stat.median)
+          const yQ3 = yScale(stat.q3)
+          const yMaxValue = yScale(stat.max)
+          const boxTop = Math.min(yQ1, yQ3)
+          const boxHeight = Math.max(1, Math.abs(yQ3 - yQ1))
 
           return (
-            <g key={s.isp}>
-              {/* Whisker line */}
-              <line x1={cx} x2={cx} y1={yMax} y2={yMin} stroke={s.color} strokeWidth={1.5} />
-              {/* Min cap */}
-              <line x1={cx - 14} x2={cx + 14} y1={yMin} y2={yMin} stroke={s.color} strokeWidth={1.5} />
-              {/* Max cap */}
-              <line x1={cx - 14} x2={cx + 14} y1={yMax} y2={yMax} stroke={s.color} strokeWidth={1.5} />
-              {/* Box (Q1-Q3) */}
+            <g key={`${stat.isp}-${index}`}>
+              <line x1={centerX} x2={centerX} y1={yMaxValue} y2={yMin} stroke={stat.color} strokeWidth={2} />
+              <line x1={centerX - boxWidth / 3} x2={centerX + boxWidth / 3} y1={yMaxValue} y2={yMaxValue} stroke={stat.color} strokeWidth={2} />
+              <line x1={centerX - boxWidth / 3} x2={centerX + boxWidth / 3} y1={yMin} y2={yMin} stroke={stat.color} strokeWidth={2} />
               <rect
-                x={xLeft}
-                y={yQ3}
+                x={centerX - boxWidth / 2}
+                y={boxTop}
                 width={boxWidth}
-                height={Math.max(2, yQ1 - yQ3)}
-                fill={s.color}
-                fillOpacity={0.18}
-                stroke={s.color}
-                strokeWidth={1.5}
-                rx={2}
+                height={boxHeight}
+                fill={stat.color}
+                fillOpacity={0.22}
+                stroke={stat.color}
+                strokeWidth={2}
+                rx={3}
               />
-              {/* Median */}
-              <line
-                x1={xLeft}
-                x2={xLeft + boxWidth}
-                y1={yMed}
-                y2={yMed}
-                stroke={s.color}
-                strokeWidth={2.5}
-              />
-              {/* Outliers */}
-              {s.outliers.map((o, idx) => (
+              <line x1={centerX - boxWidth / 2} x2={centerX + boxWidth / 2} y1={yMedian} y2={yMedian} stroke={stat.color} strokeWidth={3} />
+
+              {stat.outliers.slice(0, 25).map((outlier, outlierIndex) => (
                 <circle
-                  key={idx}
-                  cx={cx}
-                  cy={yScale(Math.min(o, Y_MAX))}
-                  r={3}
-                  fill="var(--background)"
-                  stroke={s.color}
-                  strokeWidth={1.5}
+                  key={`${stat.isp}-outlier-${outlierIndex}`}
+                  cx={centerX + ((outlierIndex % 5) - 2) * 3}
+                  cy={yScale(outlier)}
+                  r={2}
+                  fill={stat.color}
+                  opacity={0.55}
                 />
               ))}
-              {/* X label */}
+
               <text
-                x={cx}
-                y={height - 14}
+                x={centerX}
+                y={height - 10}
                 textAnchor="middle"
-                fontSize="11"
+                fontSize="10"
                 fontFamily="var(--font-mono)"
-                fill="var(--foreground)"
+                fill="var(--muted-foreground)"
               >
-                {s.isp}
+                {stat.isp.length > 18 ? `${stat.isp.slice(0, 18)}...` : stat.isp}
               </text>
             </g>
           )
         })}
       </svg>
-
-      {/* Legend / summary */}
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-border pt-3 text-[11px] text-muted-foreground sm:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.isp} className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: s.color }} aria-hidden="true" />
-            <span className="font-mono text-foreground">{s.isp}</span>
-            <span className="ml-auto font-mono">μ={s.median} ms</span>
+      <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+        {safeStats.map((stat) => (
+          <div key={`legend-${stat.isp}`} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: stat.color }} aria-hidden="true" />
+            <span>{stat.isp}: mediana {stat.median.toFixed(2)} ms</span>
           </div>
         ))}
       </div>

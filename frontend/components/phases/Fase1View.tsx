@@ -1,16 +1,16 @@
-import { ShieldCheck, Image as ImageIcon } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ShieldCheck } from "lucide-react"
+
+import { ElementRenderer } from "./ElementRenderer"
 import { Badge } from "@/components/ui/badge"
 import { FaseResponse } from "@/lib/types"
 
 export function Fase1View({ data }: { data: FaseResponse }) {
-  const { metricas_resumen, grafica_png_url } = data
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  const elements = data.elements || []
+  const { metricas_resumen } = data
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Phase header */}
-      <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-7 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <Badge
@@ -20,65 +20,46 @@ export function Fase1View({ data }: { data: FaseResponse }) {
               <ShieldCheck className="h-3 w-3" aria-hidden="true" />
               Fase 1
             </Badge>
-            <span className="font-mono text-[11px] text-muted-foreground">
-              metodología.integridad
-            </span>
+            <span className="font-mono text-[11px] text-muted-foreground">seccion 4.1 - integridad</span>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-balance">
-            Validación de Integridad y Disponibilidad
+          <h2 className="text-2xl font-semibold tracking-[-0.025em] text-balance">
+            Validacion de Integridad y Disponibilidad
           </h2>
           <p className="text-sm text-muted-foreground text-pretty">
-            Verificación de consistencia y completitud de las mediciones de RIPE Atlas, evaluando el embudo de datos.
+            Replica el formato de informe de la investigacion: alcance del conjunto de datos, embudo de disponibilidad y detalle por categoria de destino.
           </p>
         </div>
-        <div className="flex items-center gap-4 font-mono text-[11px] text-muted-foreground">
-          <div className="flex flex-col">
-            <span className="uppercase tracking-wider">Intentos Teóricos</span>
-            <span className="text-base font-semibold text-foreground">{metricas_resumen.total_intentos || 0}</span>
+
+        {metricas_resumen && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 font-mono text-[11px] text-muted-foreground sm:mt-0">
+            <div className="flex flex-col">
+              <span className="uppercase tracking-wider">Intentos</span>
+              <span className="text-base font-semibold text-foreground">
+                {Number(metricas_resumen.total_intentos || 0).toLocaleString("es")}
+              </span>
+            </div>
+            <div className="h-8 w-px bg-border" aria-hidden="true" />
+            <div className="flex flex-col">
+              <span className="uppercase tracking-wider">Ruta completa</span>
+              <span className="text-base font-semibold text-foreground">
+                {Number(metricas_resumen.ruta_completa || 0).toLocaleString("es")}
+              </span>
+            </div>
+            <div className="h-8 w-px bg-border" aria-hidden="true" />
+            <div className="flex flex-col">
+              <span className="uppercase tracking-wider">Disponibilidad</span>
+              <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                {Number(metricas_resumen.disponibilidad_pct || 0).toFixed(2)}%
+              </span>
+            </div>
           </div>
-          <div className="h-8 w-px bg-border" aria-hidden="true" />
-          <div className="flex flex-col">
-            <span className="uppercase tracking-wider">DNS Exitoso</span>
-            <span className="text-base font-semibold text-foreground">{metricas_resumen.dns_exitoso || 0}</span>
-          </div>
-          <div className="h-8 w-px bg-border" aria-hidden="true" />
-          <div className="flex flex-col">
-            <span className="uppercase tracking-wider">Disponibilidad %</span>
-            <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
-              {Number(metricas_resumen.disponibilidad_pct || 0).toFixed(2)}%
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5">
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 border-b border-border">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                </div>
-                <CardTitle className="text-base">Paquetes Exitosos por Probe</CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                Gráfico estadístico generado por el motor de R (ggplot2)
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-5 flex justify-center bg-muted/20">
-            {grafica_png_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={`${baseUrl}${grafica_png_url}`} 
-                alt="Gráfico de disponibilidad Fase 1" 
-                className="max-w-full rounded-md border border-border shadow-sm"
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground py-10">Imagen no disponible</p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex flex-col gap-8">
+        {elements.map((el, idx) => (
+          <ElementRenderer key={`${el.type}-${el.id}-${idx}`} element={el} />
+        ))}
       </div>
     </div>
   )

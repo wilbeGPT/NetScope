@@ -1,14 +1,16 @@
 library(ggplot2)
 
 generate_fase3_report <- function(df, output_path) {
-  asns <- unique(df$prb_id)
-  
-  p <- ggplot(df, aes(x = hop, fill = factor(prb_id))) +
+  label_col <- if ("provider_label" %in% names(df)) "provider_label" else if ("identity_label" %in% names(df)) "identity_label" else "prb_id"
+  labels <- as.factor(df[[label_col]])
+
+  p <- ggplot(df, aes(x = hop, fill = labels)) +
     geom_bar(position="dodge") +
     theme_minimal() +
-    labs(title = "Distribución de Hops por ASN", x = "Hop", y = "Frecuencia", fill="Probe ID")
-    
+    labs(title = "Distribucion de Hops por Proveedor/ASN", x = "Hop", y = "Frecuencia", fill="Proveedor / ASN") +
+    theme(legend.position = "bottom")
+
   ggsave(output_path, plot = p, width = 8, height = 5, dpi = 300)
-  
-  return(list(total_asns = length(asns), asns_extranjeros = 2)) # Mock 2 foreign
+
+  return(list(total_asns = length(unique(labels)), asns_extranjeros = 0))
 }

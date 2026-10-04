@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense } from "react"
+import { useParams } from "next/navigation"
 import { ChatPanel } from "@/components/layout/ChatPanel"
 import { PhasePanel } from "@/components/layout/PhasePanel"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
@@ -8,13 +9,18 @@ import { Badge } from "@/components/ui/badge"
 import { BarChart3, FileCheck2 } from "lucide-react"
 import { useInvestigation } from "./useInvestigation"
 
-/**
- * Layout principal de investigación — ruta dinámica /investigacion/[id]
- * Corresponde al diseño de referencia con panel izquierdo (Chat) + panel derecho (Fases).
- */
+function parseInvestigationId(value: string | string[] | undefined): number | null {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  if (!rawValue || !/^\d+$/.test(rawValue)) return null
+
+  const parsed = Number.parseInt(rawValue, 10)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
 function InvestigacionContent({ id }: { id: number }) {
   const {
     investigation,
+    reportTemplate,
     chatCollapsed,
     setChatCollapsed,
     fase1Data, fase2Data, fase3Data, fase4Data, fase5Data,
@@ -22,16 +28,16 @@ function InvestigacionContent({ id }: { id: number }) {
   } = useInvestigation(id)
 
   return (
-    <div className="flex h-svh w-full flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+    <div className="app-shell flex h-svh w-full flex-col">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/95 px-5 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-sm font-semibold tracking-tight">NetScope</span>
             <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
-              ripe-atlas · path-inflation-lab
+              ripe-atlas - path-inflation-lab
             </span>
           </div>
         </div>
@@ -62,6 +68,8 @@ function InvestigacionContent({ id }: { id: number }) {
           />
         </div>
         <PhasePanel
+          investigation={investigation}
+          reportTemplate={reportTemplate}
           fase1Data={fase1Data}
           fase2Data={fase2Data}
           fase3Data={fase3Data}
@@ -74,10 +82,19 @@ function InvestigacionContent({ id }: { id: number }) {
   )
 }
 
-export default function InvestigacionPage({ params }: { params: { id: string } }) {
+export default function InvestigacionPage() {
+  const params = useParams<{ id: string }>()
+  const id = parseInvestigationId(params.id)
+
   return (
-    <Suspense fallback={<div className="flex h-svh items-center justify-center text-sm text-muted-foreground">Cargando investigación...</div>}>
-      <InvestigacionContent id={parseInt(params.id, 10)} />
+    <Suspense fallback={<div className="flex h-svh items-center justify-center text-sm text-muted-foreground">Cargando investigacion...</div>}>
+      {id ? (
+        <InvestigacionContent id={id} />
+      ) : (
+        <div className="flex h-svh items-center justify-center text-sm text-muted-foreground">
+          ID de investigacion invalido.
+        </div>
+      )}
     </Suspense>
   )
 }

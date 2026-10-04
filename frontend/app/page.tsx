@@ -1,86 +1,56 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
-
-
-import { Activity, BarChart3, FileCheck2, GitBranch, Network, Radar, ShieldCheck } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { ArrowRight, BarChart3, CalendarDays, FilePlus2, ListChecks, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { AiChatPanel } from "@/components/chat/ai-chat-panel"
-import { Fase4View } from "@/components/phases/Fase4View"
-import { Fase1View } from "@/components/phases/Fase1View"
-import { Fase2View } from "@/components/phases/Fase2View"
-import { Fase3View } from "@/components/phases/Fase3View"
-import { Fase5View } from "@/components/phases/Fase5View"
-import { PhaseEmpty } from "@/components/phases/PhaseEmpty"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
-import { getInvestigation, getPhaseResult, runPhase } from "@/lib/api-client"
-import { FaseResponse, Investigation } from "@/lib/types"
+import { listInvestigations } from "@/lib/api-client"
+import { Investigation } from "@/lib/types"
 
-const phases = [
-  { id: "fase-1", short: "Fase 1", label: "Integridad", icon: ShieldCheck },
-  { id: "fase-2", short: "Fase 2", label: "Línea Base", icon: Activity },
-  { id: "fase-3", short: "Fase 3", label: "Mapeo ASN", icon: GitBranch },
-  { id: "fase-4", short: "Fase 4", label: "Path Inflation", icon: Network },
-  { id: "fase-5", short: "Fase 5", label: "Estabilidad", icon: Radar },
-]
+function formatDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Fecha no disponible"
 
-function PageContent() {
-  const [chatCollapsed, setChatCollapsed] = useState(false)
-  const searchParams = useSearchParams()
-  const idParam = searchParams.get("id")
-  
-  // State for the active investigation
-  const [activeInvId, setActiveInvId] = useState<number>(idParam ? parseInt(idParam, 10) : 1)
-  const [investigation, setInvestigation] = useState<Investigation | null>(null)
-  
-  // State for Phase results
-  const [fase1Data, setFase1Data] = useState<FaseResponse | null>(null)
-  const [fase2Data, setFase2Data] = useState<FaseResponse | null>(null)
-  const [fase3Data, setFase3Data] = useState<FaseResponse | null>(null)
-  const [fase4Data, setFase4Data] = useState<FaseResponse | null>(null)
-  const [fase5Data, setFase5Data] = useState<FaseResponse | null>(null)
+  return new Intl.DateTimeFormat("es", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
 
-  useEffect(() => {
-    if (!activeInvId) return
-    
-    // Fetch investigation metadata and cache
-    getInvestigation(activeInvId)
-      .then(inv => {
-        setInvestigation(inv)
-        if (inv.executed_phases?.includes(1)) {
-          getPhaseResult(activeInvId, 1).then(setFase1Data).catch(console.error)
-        }
-        if (inv.executed_phases?.includes(2)) {
-          getPhaseResult(activeInvId, 2).then(setFase2Data).catch(console.error)
-        }
-        if (inv.executed_phases?.includes(3)) {
-          getPhaseResult(activeInvId, 3).then(setFase3Data).catch(console.error)
-        }
-        if (inv.executed_phases?.includes(4)) {
-          getPhaseResult(activeInvId, 4).then(setFase4Data).catch(console.error)
-        }
-        if (inv.executed_phases?.includes(5)) {
-          getPhaseResult(activeInvId, 5).then(setFase5Data).catch(console.error)
-        }
-      })
-      .catch(console.error)
-  }, [activeInvId])
+function measurementLabel(count: number | undefined): string {
+  const safeCount = count ?? 0
+  return `${safeCount.toLocaleString("es")} ${safeCount === 1 ? "medicion" : "mediciones"}`
+}
 
-  const handleRunPhase = async (phaseNum: number) => {
-    if (!activeInvId) return
-    const res = await runPhase(activeInvId, phaseNum)
-    if (phaseNum === 1) setFase1Data(res)
-    if (phaseNum === 2) setFase2Data(res)
-    if (phaseNum === 3) setFase3Data(res)
-    if (phaseNum === 4) setFase4Data(res)
-    if (phaseNum === 5) setFase5Data(res)
+export default function Page() {
+  const [investigations, setInvestigations] = useState<Investigation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadInvestigations = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await listInvestigations()
+      setInvestigations(data)
+    } catch (e) {
+      console.error(e)
+      setError("No se pudo cargar la lista de investigaciones.")
+    } finally {
+      setLoading(false)
+    }
   }
 
+  useEffect(() => {
+    loadInvestigations()
+  }, [])
+
   return (
-    <div className="flex h-svh w-full flex-col bg-background">
-      {/* App top bar */}
+    <div className="flex min-h-svh w-full flex-col bg-background">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
@@ -89,147 +59,91 @@ function PageContent() {
           <div className="flex items-baseline gap-2">
             <span className="text-sm font-semibold tracking-tight">NetScope</span>
             <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
-              ripe-atlas · path-inflation-lab
+              investigaciones RIPE Atlas
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-chart-3" aria-hidden="true" />
-            {investigation ? `ID: ${investigation.id}` : "Cargando..."}
-          </Badge>
-          <Badge variant="outline" className="hidden gap-1.5 font-mono text-[10px] uppercase tracking-wider sm:inline-flex">
-            <FileCheck2 className="h-3 w-3" aria-hidden="true" />
-            v1.4.0
-          </Badge>
-          <div className="ml-1 h-5 w-px bg-border" aria-hidden="true" />
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </header>
 
-      {/* Split layout: collapsible left rail */}
-      <div
-        className={`grid min-h-0 flex-1 grid-cols-1 transition-[grid-template-columns] duration-300 ease-in-out ${chatCollapsed ? "lg:grid-cols-[56px_1fr]" : "lg:grid-cols-[30%_1fr]"
-          }`}
-      >
-        {/* Left: AI chat (collapsible) */}
-        <div className="hidden h-full min-h-0 overflow-hidden lg:flex">
-          <AiChatPanel
-            collapsed={chatCollapsed}
-            onToggle={() => setChatCollapsed((v) => !v)}
-            activeInvId={activeInvId}
-          />
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Investigaciones</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Selecciona una investigacion existente o crea una nueva desde un archivo RIPE Atlas.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={loadInvestigations} disabled={loading} aria-label="Actualizar lista">
+              <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} aria-hidden="true" />
+            </Button>
+            <Button asChild>
+              <Link href="/nueva">
+                <FilePlus2 className="h-4 w-4" aria-hidden="true" />
+                Nueva investigacion
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Right: main work area */}
-        <main className="flex min-h-0 flex-col overflow-y-auto">
-          <Tabs defaultValue="fase-4" className="flex flex-col">
-            {/* Phase tabs - sticky */}
-            <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-              <div className="flex items-center gap-4">
-                <span className="hidden font-mono text-[10px] uppercase tracking-wider text-muted-foreground xl:block">
-                  Metodología
-                </span>
-                <TabsList className="h-auto flex-wrap justify-start gap-1 bg-muted/60 p-1">
-                  {phases.map((p) => {
-                    const Icon = p.icon
-                    return (
-                      <TabsTrigger
-                        key={p.id}
-                        value={p.id}
-                        className="gap-1.5 px-3 py-1.5 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                      >
-                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground data-[state=active]:text-primary">
-                          {p.short}:
-                        </span>
-                        <span>{p.label}</span>
-                      </TabsTrigger>
-                    )
-                  })}
-                </TabsList>
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <Card className="gap-0 overflow-hidden py-0">
+          <CardHeader className="border-b px-5 py-4">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <ListChecks className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              Investigaciones guardadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-0">
+            {loading ? (
+              <div className="px-5 py-10 text-center text-sm text-muted-foreground">Cargando investigaciones...</div>
+            ) : investigations.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
+                <p className="text-sm font-medium">No hay investigaciones guardadas.</p>
+                <Button asChild>
+                  <Link href="/nueva">
+                    <FilePlus2 className="h-4 w-4" aria-hidden="true" />
+                    Nueva investigacion
+                  </Link>
+                </Button>
               </div>
-            </div>
-
-            {/* Tab contents */}
-            <div className="px-6 py-6">
-              <TabsContent value="fase-1" className="mt-0">
-                {fase1Data ? (
-                  <Fase1View data={fase1Data} />
-                ) : (
-                  <PhaseEmpty
-                    phase="Fase 1"
-                    title="Validación de Integridad"
-                    description="Verificación de consistencia y completitud de las mediciones de RIPE Atlas antes del análisis estadístico."
-                    icon={ShieldCheck}
-                    onExecute={() => handleRunPhase(1)}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="fase-2" className="mt-0">
-                {fase2Data ? (
-                  <Fase2View data={fase2Data} />
-                ) : (
-                  <PhaseEmpty
-                    phase="Fase 2"
-                    title="Construcción de Línea Base RTT"
-                    description="Cálculo de métricas base de latencia por probe y target para identificar el comportamiento normal de la red."
-                    icon={Activity}
-                    onExecute={() => handleRunPhase(2)}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="fase-3" className="mt-0">
-                {fase3Data ? (
-                  <Fase3View data={fase3Data} />
-                ) : (
-                  <PhaseEmpty
-                    phase="Fase 3"
-                    title="Mapeo ASN"
-                    description="Asociación de cada hop con su Sistema Autónomo (AS) y propietario para reconstruir la topología lógica."
-                    icon={GitBranch}
-                    onExecute={() => handleRunPhase(3)}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="fase-4" className="mt-0">
-                {fase4Data ? (
-                  <Fase4View data={fase4Data} />
-                ) : (
-                  <PhaseEmpty
-                    phase="Fase 4"
-                    title="Detección de Path Inflation"
-                    description="Comparación de trayectorias geográficas vs. lógicas en mediciones para identificar desvíos."
-                    icon={Network}
-                    onExecute={() => handleRunPhase(4)}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="fase-5" className="mt-0">
-                {fase5Data ? (
-                  <Fase5View data={fase5Data} />
-                ) : (
-                  <PhaseEmpty
-                    phase="Fase 5"
-                    title="Análisis de Estabilidad Temporal"
-                    description="Evaluación de la persistencia del path inflation a lo largo del tiempo y detección de variaciones de ruta."
-                    icon={Radar}
-                    onExecute={() => handleRunPhase(5)}
-                  />
-                )}
-              </TabsContent>
-            </div>
-          </Tabs>
-        </main>
-      </div>
+            ) : (
+              <div className="divide-y">
+                {investigations.map((investigation) => (
+                  <Link
+                    key={investigation.id}
+                    href={`/investigacion/${investigation.id}`}
+                    className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium">{investigation.name}</span>
+                        <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider">
+                          ID {investigation.id}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                          {formatDate(investigation.created_at)}
+                        </span>
+                        <span>{measurementLabel(investigation.measurement_count)}</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
-  )
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<div className="flex h-svh items-center justify-center text-sm text-muted-foreground">Cargando NetScope...</div>}>
-      <PageContent />
-    </Suspense>
   )
 }

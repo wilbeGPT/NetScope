@@ -13,7 +13,7 @@
   --popover-foreground: oklch(0.18 0.02 250);
 
   /* Primary: deep technical blue */
-  --primary: oklch(0.42 0.15 255);
+  --primary: oklch(0.62 0.16 245);
   --primary-foreground: oklch(0.985 0 0);
 
   --secondary: oklch(0.96 0.005 250);
@@ -39,7 +39,13 @@
   --chart-4: oklch(0.72 0.15 80);  /* amber */
   --chart-5: oklch(0.6 0.2 25);    /* red-orange (anomaly) */
 
-  --radius: 0.625rem;
+  --radius: 0.875rem;
+  --surface-raised: oklch(0.2 0.018 255);
+  --surface-subtle: oklch(0.175 0.016 255);
+  --success: oklch(0.72 0.14 158);
+  --warning: oklch(0.8 0.14 75);
+  --danger: oklch(0.7 0.19 28);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --sidebar: oklch(0.99 0.003 250);
   --sidebar-foreground: oklch(0.18 0.02 250);
@@ -93,8 +99,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -139,5 +145,62 @@
   }
   body {
     @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+  }
+
+  button, a, input, textarea, [role="button"] {
+    transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), transform 120ms var(--ease-out);
+  }
+
+  button:active:not(:disabled), [role="button"]:active { transform: scale(0.98); }
+}
+
+@layer components {
+  .app-shell { background: radial-gradient(circle at 100% 0%, oklch(0.25 0.045 245 / .4), transparent 34rem), var(--background); }
+  .report-surface { @apply overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_rgb(0_0_0_/_0.16)]; }
+  .report-table { @apply overflow-x-auto rounded-lg border border-border bg-[var(--surface-subtle)]; }
+  .report-table table { @apply min-w-[760px]; }
+}
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+@media print {
+  @page {
+    margin: 14mm;
+    size: A4;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+
+  header,
+  aside,
+  nav,
+  [data-slot="tabs-list"] {
+    display: none !important;
+  }
+
+  main,
+  section,
+  figure,
+  [data-slot="card"] {
+    break-inside: avoid;
+  }
+
+  [data-slot="card"] {
+    box-shadow: none !important;
+  }
+
+  img,
+  svg,
+  canvas {
+    max-width: 100% !important;
   }
 }

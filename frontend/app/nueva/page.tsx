@@ -17,7 +17,7 @@ export default function NuevaInvestigacion() {
     setLoading(true)
     try {
       const { id } = await createInvestigation(file)
-      router.push(`/?id=${id}`)
+      router.push(`/investigacion/${id}`)
     } catch (e) {
       console.error(e)
       setLoading(false)
@@ -28,7 +28,7 @@ export default function NuevaInvestigacion() {
     <div className="flex h-svh w-full items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Nueva Investigación</CardTitle>
+          <CardTitle>Nueva Investigacion</CardTitle>
           <CardDescription>Sube un archivo JSON de RIPE Atlas</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -41,9 +41,9 @@ export default function NuevaInvestigacion() {
                 </p>
                 <p className="text-xs text-muted-foreground">JSON exportado de RIPE Atlas</p>
               </div>
-              <input 
-                type="file" 
-                className="hidden" 
+              <input
+                type="file"
+                className="hidden"
                 accept=".json"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />

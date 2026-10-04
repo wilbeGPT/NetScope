@@ -5,7 +5,7 @@ import os
 
 from core.database import engine
 from core import models
-from routers import investigations, chat, analyze, export
+from routers import investigations, chat, analyze, export, report_template
 
 # Automatically create all tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
@@ -29,6 +29,7 @@ app.include_router(export.router, prefix="/exports", tags=["Exports"])
 app.include_router(investigations.router, prefix="/api/investigations", tags=["Investigations"])
 app.include_router(analyze.router, prefix="/api/investigations", tags=["Analyze"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(report_template.router, prefix="/api/report-template", tags=["Report Template"])
 
 
 @app.get("/api/health")

@@ -1,0 +1,9 @@
+node_modules
+.pnpm-store
+.next
+.git
+Dockerfile
+package-lock.json
+npm-debug.log*
+pnpm-debug.log*
+.env*.local
