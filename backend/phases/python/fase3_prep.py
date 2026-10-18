@@ -5,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from services.network_identity import resolve_probe_identities
+from phases.python.fase4_prep import normalize_isp_name
 
 TRACE_KEYS = ["msm_id", "prb_id", "timestamp", "dst_addr", "dst_name"]
 
@@ -38,10 +39,11 @@ def _measurements(df: pd.DataFrame) -> pd.DataFrame:
 
 def _metadata_for_probe(probe: str, identities: dict[Any, dict[str, Any]]) -> dict[str, str]:
     identity = identities.get(int(probe), identities.get(probe, {})) if probe.isdigit() else {}
-    isp = str(identity.get("isp") or identity.get("label") or f"Sonda {probe}")
+    raw_isp = str(identity.get("isp") or identity.get("label") or f"Sonda {probe}")
+    clean_isp = normalize_isp_name(raw_isp, probe)
     return {
-        "ISP": isp,
-        "Organizacion oficial RDAP": str(identity.get("as_name") or isp),
+        "ISP": clean_isp,
+        "Organizacion oficial RDAP": str(identity.get("as_name") or raw_isp),
         "ASN": str(identity.get("asn") or "N/D"),
         "Pais Registro": str(identity.get("country") or identity.get("country_code") or "N/D"),
     }
@@ -140,11 +142,12 @@ def _outage_events(measurements: pd.DataFrame) -> list[dict]:
                 "_duracion_horas": gap / 3600,
             })
         if events:
-            candidates.append(events)
+            probe = _probe_id(group.iloc[0]["prb_id"])
+            candidates.append((probe, events))
     if not candidates:
-        return []
-    selected = max(candidates, key=lambda rows: (len(rows), sum(row["_duracion_horas"] for row in rows)))
-    return [{key: value for key, value in row.items() if key != "_duracion_horas"} for row in selected]
+        return [], None
+    selected_probe, selected = max(candidates, key=lambda pair: (len(pair[1]), sum(row["_duracion_horas"] for row in pair[1])))
+    return [{key: value for key, value in row.items() if key != "_duracion_horas"} for row in selected], selected_probe
 
 def _public_targets(measurements: pd.DataFrame) -> list[str]:
     if "dst_addr" not in measurements.columns:
@@ -304,6 +307,9 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
     activity_columns = list(activity_rows[0].keys()) if activity_rows else ["Fecha", "TOTAL"]
     foreign_asns = {row["ASN"] for row in inventory_rows if row["Pais Registro"] not in {"SV", "N/D", ""}}
 
+    outage_rows, outage_probe = _outage_events(measurements)
+    outage_title = f"Cronologia y duracion de episodios de desconexion de la sonda {outage_probe}" if outage_probe else "Cronologia y duracion de episodios de desconexion de la sonda seleccionada"
+
     return {
         "metricas_resumen": {
             "total_asns": len({row["ASN"] for row in inventory_rows if row["ASN"] != "N/D"}),
@@ -312,13 +318,13 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
             "ips_destino_publicas": len(targets),
         },
         "report_figures": [
-            _table_figure("14", "Mapa de distribucion de sondas por ISP", ["ISP / Proveedor", "ASN", "Pais Registro", "Sondas", "Mediciones"], asn_rows),
+            _table_figure("14", "Mapa de distribucion de sondas por ISP en El Salvador", ["ISP / Proveedor", "ASN", "Pais Registro", "Sondas", "Mediciones"], asn_rows),
             _table_figure("15", "Distribucion de mediciones validas por sistema autonomo (ASN)", ["N", "ID Sonda", "IP Publica", "ISP / Proveedor", "Organizacion oficial RDAP", "ASN", "Pais Registro", "Mediciones"], inventory_rows),
             _table_figure("16", "Tabla de sondas, ASNs, paises de registro e ISPs verificados", ["ISP / Proveedor", "ASN", "Organizacion", "Pais Registro", "Sondas", "Mediciones"], asn_rows),
-            _table_figure("17", "Cronologia y duracion de episodios de desconexion de la sonda seleccionada", ["Episodio", "Inicio (UTC)", "Fin (UTC)", "Duracion", "IP antes", "IP despues", "Cambio de IP"], _outage_events(measurements)),
-            _table_figure("18", "Distribucion de mediciones entre destinos publicos detectados", ["Probe", "ISP", "IP Destino", "Mediciones", "TTR mediana (ms)", "TTR promedio (ms)", "Hops promedio"], _route_table_rows(measurements, targets, identities)),
-            {"id": "19", "title": "Comparativa de rutas de backbone hacia destinos publicos", "type": "CHART", "kind": "bar", "categoryKey": "Sonda", "dataKeys": route_keys, "rows": route_rows},
+            _table_figure("17", outage_title, ["Episodio", "Inicio (UTC)", "Fin (UTC)", "Duracion", "IP antes", "IP despues", "Cambio de IP"], outage_rows),
+            _table_figure("18", "Distribucion de mediciones entre las IPs activas del servidor destino", ["Probe", "ISP", "IP Destino", "Mediciones", "TTR mediana (ms)", "TTR promedio (ms)", "Hops promedio"], _route_table_rows(measurements, targets, identities)),
+            {"id": "19", "title": "Comparativa de rutas de backbone hacia cada IP del servidor", "type": "CHART", "kind": "bar", "categoryKey": "Sonda", "dataKeys": route_keys, "rows": route_rows},
             _table_figure("20", f"Cronologia de actividad de la IP {secondary_ip or 'secundaria'} durante el estudio", activity_columns, activity_rows),
-            {"id": "21", "title": "Actividad diaria del destino publico secundario", "type": "CHART", "kind": "bar", "categoryKey": "Fecha", "dataKey": "Mediciones", "rows": _daily_activity_rows(activity_rows)},
+            {"id": "21", "title": "Comparativa de latencias entre ambas IPs del servidor", "type": "CHART", "kind": "bar", "categoryKey": "IP destino", "dataKeys": ["RTT mediano", "RTT promedio"], "rows": latency_rows},
         ],
     }

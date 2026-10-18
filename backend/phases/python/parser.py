@@ -6,7 +6,7 @@ import pandas as pd
 
 def load_ripe_measurements(filepath: str) -> list[dict[str, Any]]:
     """Load RIPE Atlas exports stored as JSON arrays, single objects, or JSON Lines."""
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
         content = f.read().strip()
 
     if not content:

@@ -8,7 +8,7 @@ export function Fase2View({ data }: { data: FaseResponse }) {
   const elements = data.elements || []
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -18,14 +18,16 @@ export function Fase2View({ data }: { data: FaseResponse }) {
             </Badge>
             <span className="font-mono text-[11px] text-muted-foreground">seccion 4.2 - linea_base</span>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-balance">Construccion de Linea Base RTT</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Construccion de Linea Base RTT</h2>
           <p className="text-sm text-muted-foreground text-pretty">Calculo de metricas base de latencia por proveedor/ASN para identificar el comportamiento normal de la red.</p>
         </div>
       </div>
 
+      <div className="flex flex-col gap-8">
         {elements.map((el, idx) => (
           <ElementRenderer key={`${el.type}-${el.id}-${idx}`} element={el} />
         ))}
+      </div>
     </div>
   )
 }

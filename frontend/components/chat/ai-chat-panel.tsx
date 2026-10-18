@@ -82,7 +82,7 @@ export function AiChatPanel({ collapsed = false, onToggle, activeInvId = 1 }: Ai
     setMessages((prev) => [...prev, newMessage])
     setInput("")
     setAttachments([])
-    
+
     setLoading(true)
     try {
       const replyText = await sendChatMessage(activeInvId, text)
@@ -102,7 +102,7 @@ export function AiChatPanel({ collapsed = false, onToggle, activeInvId = 1 }: Ai
 
   const handleFiles = async (files: FileList | null, kind: "image" | "file") => {
     if (!files) return
-    
+
     // Auto-process JSON uploads for investigation creation
     const file = files[0]
     if (file && file.name.endsWith(".json")) {
@@ -313,7 +313,7 @@ export function AiChatPanel({ collapsed = false, onToggle, activeInvId = 1 }: Ai
               </Button>
               <div className="ml-2 hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
                 <Cpu className="h-3 w-3" aria-hidden="true" />
-                <span className="font-mono">gemini-1.5-flash</span>
+                <span className="font-mono">gemini-3.8-flash</span>
               </div>
             </div>
             <Button

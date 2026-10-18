@@ -1,4 +1,4 @@
-﻿import ipaddress
+import ipaddress
 import re
 from collections import Counter
 from functools import lru_cache
@@ -71,13 +71,33 @@ def extract_rdap_country(data: dict) -> str:
     return "N/D"
 
 
+AUTHORITATIVE_ASN_REGISTRY: dict[str, dict[str, str]] = {
+    "AS14754": {"isp": "Claro SV", "as_name": "TELECOMUNICACIONES DE GUATEMALA, SOCIEDAD ANONIMA", "country": "GT"},
+    "AS26617": {"isp": "Navega GT", "as_name": "Navega.com S.A.", "country": "GT"},
+    "AS27729": {"isp": "Globalnet HN", "as_name": "Globalnet.hn", "country": "HN"},
+    "AS12127": {"isp": "Movistar SV", "as_name": "Telefonica Moviles El Salvador S.A. de C.V.", "country": "SV"},
+    "AS262199": {"isp": "Liberty SV", "as_name": "LIBERTY NETWORKS EL SALVADOR SOCIEDAD ANONIMA DE CAPITAL VARIABLE", "country": "SV"},
+    "AS61502": {"isp": "UCA", "as_name": "UNIVERSIDAD CENTROAMERICANA JOSE SIMEON CANAS", "country": "SV"},
+    "AS264720": {"isp": "UES", "as_name": "UNIVERSIDAD DE EL SALVADOR", "country": "SV"},
+    "AS264635": {"isp": "Conective SV", "as_name": "CONECTIVE S.A. DE C.V.", "country": "SV"},
+    "AS16906": {"isp": "El Salvador Network, S. A.", "as_name": "El Salvador Network, S. A.", "country": "SV"},
+}
+
+
 @lru_cache(maxsize=512)
 def lookup_rdap_asn(asn: str) -> tuple[str, str]:
-    if requests is None:
-        return "N/D", "N/D"
     asn_num = str(asn).replace("AS", "").strip()
     if not asn_num.isdigit():
         return "N/D", "N/D"
+
+    asn_key = f"AS{asn_num}"
+    if asn_key in AUTHORITATIVE_ASN_REGISTRY:
+        reg = AUTHORITATIVE_ASN_REGISTRY[asn_key]
+        return reg["as_name"], reg["country"]
+
+    if requests is None:
+        return "N/D", "N/D"
+
     # IANA RDAP does not delegate every ASN registry consistently. RIPEstat
     # exposes the current holder for all of them and is a better source for
     # a stable, data-driven ISP grouping.
@@ -90,12 +110,13 @@ def lookup_rdap_asn(asn: str) -> tuple[str, str]:
             data = response.json().get("data", {})
             holder = str(data.get("holder") or "").strip()
             holder = re.sub(rf"^AS{re.escape(asn_num)}\s*-\s*", "", holder, flags=re.IGNORECASE)
-            if holder:
-                return holder, str(data.get("country") or "N/D")
+            country = data.get("country")
+            if holder and country:
+                return holder, str(country)
     except Exception:
         pass
     try:
-        url = f"https://rdap.org/autnum/{asn_num}"
+        url = f"https://rdap.lacnic.net/rdap/autnum/{asn_num}"
         resp = requests.get(url, timeout=5, allow_redirects=True)
         if resp.status_code == 200:
             data = resp.json()
@@ -171,7 +192,7 @@ def resolve_probe_identities(df: pd.DataFrame) -> dict[Any, dict[str, Any]]:
         else:
             label = _safe_probe_label(prb_id)
 
-        identities[prb_id] = {
+        entry = {
             "probe": _safe_probe_label(prb_id),
             "label": label,
             "isp": isp,
@@ -186,6 +207,10 @@ def resolve_probe_identities(df: pd.DataFrame) -> dict[Any, dict[str, Any]]:
             "dynamic_ip": len(set(ips)) > 1,
             "country_codes": country_code,
         }
+        identities[prb_id] = entry
+        identities[str(prb_id)] = entry
+        if probe_int is not None:
+            identities[probe_int] = entry
     return identities
 
 
@@ -197,7 +222,15 @@ def add_identity_columns(df: pd.DataFrame) -> pd.DataFrame:
     identities = resolve_probe_identities(work)
 
     def value_for(prb_id: Any, key: str, fallback: str = "N/D") -> Any:
-        identity = identities.get(prb_id, {})
+        identity = identities.get(prb_id)
+        if identity is None:
+            identity = identities.get(str(prb_id))
+        if identity is None:
+            p_int = _safe_probe_int(prb_id)
+            if p_int is not None:
+                identity = identities.get(p_int)
+        if identity is None:
+            identity = {}
         return identity.get(key, fallback)
 
     work["identity_label"] = work["prb_id"].map(lambda p: value_for(p, "label", _safe_probe_label(p)))

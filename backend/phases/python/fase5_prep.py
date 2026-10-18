@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from services.network_identity import add_identity_columns
-from phases.python.fase4_prep import _is_public_ip, _probe_id, _public_targets
+from phases.python.fase4_prep import _is_public_ip, _probe_id, _public_targets, CANONICAL_ISPS, normalize_isp_name
 
 TRACE_KEYS = ["msm_id", "prb_id", "timestamp", "dst_addr", "dst_name"]
 DOW_ES = {
@@ -48,14 +48,10 @@ def _control_probe_ids(df: pd.DataFrame) -> set[str]:
 
 
 def _isp_for_row(row: pd.Series) -> str:
-    probe = _probe_id(row.get("prb_id"))
     label = row.get("identity_isp") or row.get("identity_label")
-    if pd.notna(label) and str(label).strip() and str(label) != "N/D":
-        return str(label)
     asn = row.get("identity_asn")
-    if pd.notna(asn) and str(asn).strip() and str(asn) != "N/D":
-        return str(asn)
-    return f"Probe {probe}"
+    combined = f"{label} {asn}" if pd.notna(label) else str(asn or "")
+    return normalize_isp_name(combined, row.get("prb_id"))
 
 
 def _analysis_timezone() -> ZoneInfo:
@@ -106,7 +102,9 @@ def _destination_packets(df: pd.DataFrame, targets: list[str]) -> pd.DataFrame:
 
 
 def _ordered_isps(values: list[str]) -> list[str]:
-    return sorted(values)
+    canonical = [isp for isp in CANONICAL_ISPS if isp in values]
+    others = sorted([isp for isp in values if isp not in canonical])
+    return canonical + others
 
 
 def _hourly_rows(dest: pd.DataFrame) -> tuple[list[dict], list[str]]:

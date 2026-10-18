@@ -8,7 +8,7 @@ export function Fase3View({ data }: { data: FaseResponse }) {
   const elements = data.elements || []
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -20,7 +20,7 @@ export function Fase3View({ data }: { data: FaseResponse }) {
               seccion 4.3 - mapeo_asn
             </span>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-balance">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             Mapeo de Proveedores y ASNs
           </h2>
           <p className="text-sm text-muted-foreground text-pretty">

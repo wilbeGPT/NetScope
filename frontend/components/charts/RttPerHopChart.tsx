@@ -17,7 +17,7 @@ export function RttPerHopChart({ data = [] }: { data?: any[] }) {
 
   const keys = Object.keys(data[0]).filter((key) => key !== "hop")
   const config = keys.reduce((acc, key, i) => {
-    acc[key] = { label: key, color: `hsl(var(--chart-${(i % 5) + 1}))` }
+    acc[key] = { label: key, color: `var(--color-chart-${(i % 5) + 1}, #2563eb)` }
     return acc
   }, {} as ChartConfig)
 

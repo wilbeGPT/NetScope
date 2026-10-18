@@ -1,4 +1,4 @@
-﻿import ipaddress
+import ipaddress
 
 import pandas as pd
 
@@ -48,7 +48,7 @@ def _measurement_summary(df: pd.DataFrame) -> pd.DataFrame:
         final_rows = hop_rows[hop_rows["hop"] == max_hop]
         rtts = final_rows["rtt"].dropna()
         sent = int(len(final_rows))
-        lost = int(final_rows["is_timeout"].sum() + final_rows["rtt"].isna().sum())
+        lost = int((final_rows["is_timeout"].fillna(False).astype(bool) | final_rows["rtt"].isna()).sum())
         if rtts.empty:
             continue
         rows.append({
@@ -221,13 +221,23 @@ def _latency_rows(metrics: pd.DataFrame, baseline_probe: str | None) -> list[dic
     ordered = metrics.sort_values("Mediana_RTT")
     for _, row in ordered.iterrows():
         probe = str(row["prb_id"])
-        if bool(row.get("es_lan")):
-            rol = "Control LAN"
-        elif baseline_probe and probe == baseline_probe:
-            rol = "Linea base WAN"
+        is_lan = bool(row.get("es_lan"))
+        is_base = bool(baseline_probe and probe == str(baseline_probe))
+        if is_lan:
+            rol = f"LAN Control ({probe})"
+            color = "#0284c7"
+        elif is_base:
+            rol = f"WAN Línea Base ({baseline_probe})"
+            color = "#10b981"
         else:
-            rol = "WAN"
-        rows.append({"ID Sonda": probe, "Mediana RTT": round(float(row["Mediana_RTT"]), 2), "Rol": rol})
+            rol = "Otras Sondas"
+            color = "#94a3b8"
+        rows.append({
+            "ID de Sonda": probe,
+            "Latencia Mediana (ms)": round(float(row["Mediana_RTT"]), 1),
+            "Rol": rol,
+            "fill": color,
+        })
     return rows
 
 
@@ -251,9 +261,48 @@ def _packet_loss_rows(metrics: pd.DataFrame) -> list[dict]:
     ordered = metrics.sort_values("Mediana_RTT")
     rows = []
     for _, row in ordered.iterrows():
+        probe = str(row["prb_id"])
+        loss = round(float(row["Packet_Loss_%"]), 2)
+        color = "#ef4444" if loss > 5.0 else "#94a3b8"
         rows.append({
-            "ID Sonda": str(row["prb_id"]),
-            "Perdida %": round(float(row["Packet_Loss_%"]), 2),
+            "ID de Sonda": probe,
+            "Porcentaje de Perdida (%)": loss,
+            "fill": color,
+        })
+    return rows
+
+
+def _baseline_histogram_rows(raw_df: pd.DataFrame, baseline_probe: str | None) -> list[dict]:
+    if not baseline_probe:
+        return []
+    work = raw_df[(raw_df["prb_id"].astype(str) == str(baseline_probe)) & raw_df["dst_addr"].apply(_is_public_target)].copy()
+    work["hop"] = pd.to_numeric(work.get("hop"), errors="coerce")
+    work["rtt"] = pd.to_numeric(work.get("rtt"), errors="coerce")
+    keys = _trace_keys_for(work)
+    final_rtts = []
+    if keys and not work.empty:
+        for _, trace in work.groupby(keys, dropna=False):
+            trace = trace.dropna(subset=["hop"])
+            if not trace.empty:
+                max_hop = trace["hop"].max()
+                final = trace[trace["hop"] == max_hop]["rtt"].dropna()
+                if not final.empty:
+                    final_rtts.append(float(final.mean()))
+    if not final_rtts:
+        return []
+    s = pd.Series(final_rtts)
+    bins = [0, 52, 54, 56, 58, 60, 65, 1000]
+    labels = ["< 52 ms", "52-54 ms", "54-56 ms", "56-58 ms", "58-60 ms", "60-65 ms", "> 65 ms"]
+    counts = pd.cut(s, bins=bins, labels=labels).value_counts().sort_index()
+    total = len(s)
+    rows = []
+    for lbl, count in counts.items():
+        pct = round((count / total) * 100, 1) if total > 0 else 0.0
+        rows.append({
+            "Rango RTT": str(lbl),
+            "Frecuencia": int(count),
+            "Porcentaje": f"{pct}%",
+            "Muestras": int(count),
         })
     return rows
 
@@ -282,6 +331,15 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
         **diag_metrics,
     }
 
+    base_rtt_str = f"{float(baseline['Mediana_RTT']):.1f} ms" if baseline is not None else "N/D"
+    caption12 = f"Figura 12. Mediana de Latencia (RTT) por Sonda Hacia la UFG. Verde = WAN Linea Base ({baseline_probe or 'N/D'}: {base_rtt_str}); Azul = LAN Control; Gris = Otras Sondas."
+    
+    max_loss_row = max(fig13_rows, key=lambda r: r.get("Porcentaje de Perdida (%)", 0), default=None)
+    if max_loss_row and max_loss_row.get("Porcentaje de Perdida (%)", 0) > 1.0:
+        caption13 = f"Figura 13. Perdida de Paquetes (Packet Loss %) por Sonda. Sonda {max_loss_row['ID de Sonda']} destacada en rojo con perdida anomala de {max_loss_row['Porcentaje de Perdida (%)']}%."
+    else:
+        caption13 = "Figura 13. Perdida de Paquetes (Packet Loss %) por Sonda."
+
     return {
         "metricas_resumen": metricas,
         "report_tables": [],
@@ -302,18 +360,20 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
             },
             {
                 "id": "12",
-                "title": f"Distribucion de latencia de la sonda {baseline_probe or 'linea base'} y comparativa RTT",
+                "title": "Mediana de Latencia (RTT) por Sonda Hacia la UFG",
+                "caption": caption12,
                 "kind": "bar",
-                "dataKey": "Mediana RTT",
-                "categoryKey": "ID Sonda",
+                "dataKey": "Latencia Mediana (ms)",
+                "categoryKey": "ID de Sonda",
                 "rows": fig12_rows,
             },
             {
                 "id": "13",
-                "title": "Porcentaje de perdida de paquetes por sonda",
+                "title": "Perdida de Paquetes (Packet Loss %) por Sonda",
+                "caption": caption13,
                 "kind": "bar",
-                "dataKey": "Perdida %",
-                "categoryKey": "ID Sonda",
+                "dataKey": "Porcentaje de Perdida (%)",
+                "categoryKey": "ID de Sonda",
                 "rows": fig13_rows,
             },
         ],

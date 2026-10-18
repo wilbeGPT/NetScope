@@ -11,7 +11,7 @@ export function Fase4View({ data }: { data: FaseResponse }) {
   const anomalias = data?.metricas_resumen?.anomalias ?? 0
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -24,7 +24,7 @@ export function Fase4View({ data }: { data: FaseResponse }) {
             </Badge>
             <span className="font-mono text-[11px] text-muted-foreground">seccion 4.4 - path_inflation</span>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-balance">Deteccion de Path Inflation</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Deteccion de Path Inflation</h2>
           <p className="text-sm text-muted-foreground text-pretty">
             Comparacion de trayectorias logicas en RIPE Atlas para identificar saltos con delta RTT superior a 20 ms.
           </p>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PhaseNav } from "@/components/phases/PhaseNav"
 import { PhaseEmpty } from "@/components/phases/PhaseEmpty"
@@ -21,6 +22,10 @@ export function PhasePanel({
   fase4Data,
   fase5Data,
   onRunPhase,
+  onRunAllPhases,
+  isRunningAll = false,
+  runningPhaseNum = null,
+  pipelineProgress = "",
 }: {
   investigation: Investigation | null
   reportTemplate?: ReportTemplate | null
@@ -30,12 +35,25 @@ export function PhasePanel({
   fase4Data: FaseResponse | null
   fase5Data: FaseResponse | null
   onRunPhase: (n: number) => Promise<void>
+  onRunAllPhases?: () => Promise<void> | void
+  isRunningAll?: boolean
+  runningPhaseNum?: number | null
+  pipelineProgress?: string
 }) {
+  const [activeTab, setActiveTab] = useState("reporte")
+
   return (
-    <main className="flex min-h-0 flex-col overflow-y-auto print:overflow-visible">
-      <Tabs defaultValue="reporte" className="flex flex-col">
-        <PhaseNav />
-        <div className="px-6 py-6 print:px-0">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain print:overflow-visible">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+        <PhaseNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onRunAllPhases={onRunAllPhases}
+          isRunningAll={isRunningAll}
+          runningPhaseNum={runningPhaseNum}
+          pipelineProgress={pipelineProgress}
+        />
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:px-0">
           <TabsContent value="reporte" className="mt-0">
             <ReportView
               investigation={investigation}
@@ -45,6 +63,12 @@ export function PhasePanel({
               fase3Data={fase3Data}
               fase4Data={fase4Data}
               fase5Data={fase5Data}
+              onRunPhase={onRunPhase}
+              onRunAllPhases={onRunAllPhases}
+              isRunningAll={isRunningAll}
+              runningPhaseNum={runningPhaseNum}
+              pipelineProgress={pipelineProgress}
+              onTabChange={setActiveTab}
             />
           </TabsContent>
           <TabsContent value="fase-1" className="mt-0">
@@ -57,6 +81,8 @@ export function PhasePanel({
                 description="Verificacion de consistencia y completitud de las mediciones de RIPE Atlas antes del analisis estadistico."
                 icon={ShieldCheck}
                 onExecute={() => onRunPhase(1)}
+                onRunAll={onRunAllPhases}
+                isRunningAll={isRunningAll}
               />
             )}
           </TabsContent>
@@ -70,6 +96,8 @@ export function PhasePanel({
                 description="Calculo de metricas base de latencia por proveedor/ASN y destino para identificar el comportamiento normal de la red."
                 icon={Activity}
                 onExecute={() => onRunPhase(2)}
+                onRunAll={onRunAllPhases}
+                isRunningAll={isRunningAll}
               />
             )}
           </TabsContent>
@@ -83,6 +111,8 @@ export function PhasePanel({
                 description="Asociacion de cada hop con su Sistema Autonomo operativo y propietario para reconstruir la topologia logica."
                 icon={GitBranch}
                 onExecute={() => onRunPhase(3)}
+                onRunAll={onRunAllPhases}
+                isRunningAll={isRunningAll}
               />
             )}
           </TabsContent>
@@ -96,6 +126,8 @@ export function PhasePanel({
                 description="Comparacion de trayectorias geograficas vs. logicas en mediciones para identificar desvios."
                 icon={Network}
                 onExecute={() => onRunPhase(4)}
+                onRunAll={onRunAllPhases}
+                isRunningAll={isRunningAll}
               />
             )}
           </TabsContent>
@@ -109,6 +141,8 @@ export function PhasePanel({
                 description="Evaluacion de la persistencia del path inflation a lo largo del tiempo y deteccion de variaciones de ruta."
                 icon={Radar}
                 onExecute={() => onRunPhase(5)}
+                onRunAll={onRunAllPhases}
+                isRunningAll={isRunningAll}
               />
             )}
           </TabsContent>

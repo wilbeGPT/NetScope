@@ -17,6 +17,12 @@ node_modules
 # Python / backend generated files
 __pycache__/
 *.py[cod]
+*$py.class
+
+# Root runtime data generated if scripts run from root
+/data/
+*.log
+*.tmp
 
 # Local package stores and build outputs
 .pnpm-store/

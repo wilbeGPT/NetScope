@@ -9,7 +9,7 @@ export function Fase1View({ data }: { data: FaseResponse }) {
   const { metricas_resumen } = data
 
   return (
-    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-7 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -22,7 +22,7 @@ export function Fase1View({ data }: { data: FaseResponse }) {
             </Badge>
             <span className="font-mono text-[11px] text-muted-foreground">seccion 4.1 - integridad</span>
           </div>
-          <h2 className="text-2xl font-semibold tracking-[-0.025em] text-balance">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             Validacion de Integridad y Disponibilidad
           </h2>
           <p className="text-sm text-muted-foreground text-pretty">

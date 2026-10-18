@@ -14,23 +14,35 @@ export function DailyRttChart({ data = [] }: { data?: DailyRttPoint[] }) {
 
   const isps = Object.keys(data[0] ?? {}).filter((key) => key !== "date")
   const colors = [
-    { stroke: "hsl(var(--chart-1))", fill: "hsl(var(--chart-1) / 0.15)" },
-    { stroke: "hsl(var(--chart-2))", fill: "hsl(var(--chart-2) / 0.15)" },
-    { stroke: "hsl(var(--chart-3))", fill: "hsl(var(--chart-3) / 0.15)" },
-    { stroke: "hsl(var(--chart-4))", fill: "hsl(var(--chart-4) / 0.15)" },
-    { stroke: "hsl(var(--chart-5))", fill: "hsl(var(--chart-5) / 0.15)" },
+    "var(--color-chart-1, #2563eb)",
+    "var(--color-chart-2, #06b6d4)",
+    "var(--color-chart-3, #10b981)",
+    "var(--color-chart-4, #f59e0b)",
+    "var(--color-chart-5, #ef4444)",
   ]
 
   return (
     <ResponsiveContainer width="100%" height={220}>
       <AreaChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-        <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-        <YAxis tick={{ fontSize: 11 }} unit=" ms" />
-        <Tooltip formatter={(v: number) => [`${v} ms`]} />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted-foreground, #94a3b8)" }} />
+        <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground, #94a3b8)" }} unit=" ms" />
+        <Tooltip
+          contentStyle={{ backgroundColor: "var(--card, #0f172a)", border: "1px solid var(--border, #1e293b)", borderRadius: "8px" }}
+          itemStyle={{ color: "var(--foreground, #f8fafc)" }}
+          formatter={(v: number) => [`${v} ms`]}
+        />
+        <Legend wrapperStyle={{ fontSize: 11, color: "var(--foreground, #f8fafc)" }} />
         {isps.map((isp, i) => (
-          <Area key={isp} type="monotone" dataKey={isp} stroke={colors[i % colors.length].stroke} fill={colors[i % colors.length].fill} strokeWidth={2} />
+          <Area
+            key={isp}
+            type="monotone"
+            dataKey={isp}
+            stroke={colors[i % colors.length]}
+            fill={colors[i % colors.length]}
+            fillOpacity={0.15}
+            strokeWidth={2}
+          />
         ))}
       </AreaChart>
     </ResponsiveContainer>

@@ -1,4 +1,4 @@
-﻿import ipaddress
+import ipaddress
 import math
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -145,52 +145,78 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
     total_lost = max(0, total_theoretical - total_real)
 
     fig1_rows: list[dict] = []
-    group_cols = [col for col in ["dst_addr", "prb_id"] if col in measurements.columns]
-    if group_cols:
-        fig1_total = measurements.groupby(group_cols, dropna=False).size().reset_index(name="Total_Measurements")
-        fig1_succ = successful_measurements.groupby(group_cols, dropna=False).size().reset_index(name="Successful_Reaches") if not successful_measurements.empty else pd.DataFrame(columns=group_cols + ["Successful_Reaches"])
-        fig1_group = pd.merge(fig1_total, fig1_succ, on=group_cols, how="left").fillna(0).sort_values(by=group_cols)
+    # Filter only measurements with successful destination IP resolution (9,085 measurements in the thesis)
+    resolved = measurements[measurements["dst_addr"].notna() & (measurements["dst_addr"].astype(str).str.strip().ne("")) & (measurements["dst_addr"].astype(str).ne("0"))].copy()
+    if not resolved.empty:
+        fig1_total = resolved.groupby(["dst_addr", "prb_id"], dropna=False).size().reset_index(name="Total_Measurements")
+        fig1_succ = successful_measurements.groupby(["dst_addr", "prb_id"], dropna=False).size().reset_index(name="Successful_Reaches") if not successful_measurements.empty else pd.DataFrame(columns=["dst_addr", "prb_id", "Successful_Reaches"])
+        fig1_group = pd.merge(fig1_total, fig1_succ, on=["dst_addr", "prb_id"], how="left").fillna(0)
+        fig1_group["dst_addr"] = fig1_group["dst_addr"].astype(str)
+        fig1_group["prb_id"] = fig1_group["prb_id"].astype(str)
+        fig1_group = fig1_group.sort_values(by=["dst_addr", "prb_id"])
         for i, (_, row) in enumerate(fig1_group.iterrows()):
             total = int(row["Total_Measurements"])
             succ = int(row["Successful_Reaches"])
-            fig1_rows.append({"": str(i), "Dest_IP": "Sin destino resuelto" if pd.isna(row.get("dst_addr")) else str(row.get("dst_addr", "N/D")), "Probe_ID": str(row.get("prb_id", "N/D")), "Total_Measurements": total, "Successful_Reaches": succ, "Success_Rate_%": f"{_percent(succ, total)} %"})
+            rate = (succ / total) * 100 if total > 0 else 0.0
+            fig1_rows.append({
+                "N": str(i),
+                "Dest_IP": str(row["dst_addr"]),
+                "Probe_ID": str(row["prb_id"]),
+                "Total_Measurements": total,
+                "Successful_Reaches": succ,
+                "Success_Rate_%": f"{rate:.2f} %",
+            })
     total_meas = sum(int(r["Total_Measurements"]) for r in fig1_rows)
     total_succ = sum(int(r["Successful_Reaches"]) for r in fig1_rows)
-    fig1_rows.append({"": str(len(fig1_rows)), "Dest_IP": "TOTAL", "Probe_ID": "-", "Total_Measurements": total_meas, "Successful_Reaches": total_succ, "Success_Rate_%": f"{_percent(total_succ, total_meas)} %"})
+    total_rate = (total_succ / total_meas) * 100 if total_meas > 0 else 0.0
+    fig1_rows.append({
+        "N": str(len(fig1_rows)),
+        "Dest_IP": "TOTAL",
+        "Probe_ID": "-",
+        "Total_Measurements": total_meas,
+        "Successful_Reaches": total_succ,
+        "Success_Rate_%": f"{total_rate:.2f} %",
+    })
 
     fig2_rows: list[dict] = []
-    fig2_ips: list[str] = []
+    fig2_ips: list[str] = ["45.227.202.7", "192.168.18.33", "200.124.138.24"]
     if {"prb_id", "dst_addr"}.issubset(work.columns):
-        chart_source = measurements.copy()
-        chart_source["dst_addr"] = chart_source["dst_addr"].fillna("Sin destino resuelto").astype(str)
+        chart_source = resolved.copy()
         fig2_group = chart_source.groupby(["prb_id", "dst_addr"], dropna=False).size().unstack(fill_value=0).reset_index()
-        fig2_ips = [str(c) for c in fig2_group.columns if c != "prb_id"]
+        actual_ips = [ip for ip in fig2_ips if ip in fig2_group.columns]
+        for c in fig2_group.columns:
+            if c != "prb_id" and c not in actual_ips:
+                actual_ips.append(str(c))
+        fig2_ips = actual_ips
+        fig2_group["prb_id_str"] = fig2_group["prb_id"].astype(str)
+        fig2_group["order_vol"] = fig2_group.get("45.227.202.7", 0)
+        fig2_group = fig2_group.sort_values(by=["order_vol", "prb_id_str"], ascending=[False, True])
         for _, row in fig2_group.iterrows():
-            item = {"categoria": str(row["prb_id"])}
+            item = {"categoria": str(row["prb_id_str"])}
             for ip in fig2_ips:
-                item[ip] = int(row[ip])
+                item[ip] = int(row.get(ip, 0))
             fig2_rows.append(item)
 
     fig3_rows = [
-        {"Estado de Medicion": "Registradas exitosamente en el JSON", "Cantidad": total_real, "Proporcion": f"{_percent(total_real, total_theoretical)} %"},
-        {"Estado de Medicion": "No registradas respecto al volumen esperado", "Cantidad": total_lost, "Proporcion": f"{_percent(total_lost, total_theoretical)} %"},
-        {"Estado de Medicion": "Total esperado inferido", "Cantidad": total_theoretical, "Proporcion": "100.00 %"},
+        {"Estado de Medicion": "Registradas Exitosamente (En JSON)", "Cantidad": total_real, "Proporcion": f"{_percent(total_real, total_theoretical)} %"},
+        {"Estado de Medicion": "Perdidas (Sondas apagadas/sin red)", "Cantidad": total_lost, "Proporcion": f"{_percent(total_lost, total_theoretical)} %"},
+        {"Estado de Medicion": "TOTAL TEÓRICO PROGRAMADO", "Cantidad": total_theoretical, "Proporcion": "100.00 %"},
     ]
 
     dns_failures = measurements[measurements["dst_addr"].isna() | (measurements["dst_addr"].astype(str).str.strip() == "")].copy() if "dst_addr" in measurements.columns else pd.DataFrame()
     fig4_rows = []
-    for i, (_, row) in enumerate(dns_failures.iterrows()):
-        fig4_rows.append({"": str(i), "ID de Sonda": str(row.get("prb_id", "N/D")), "Fecha y Hora (CST)": _format_timestamp(row.get("timestamp")), "Dominio Objetivo": str(row.get("dst_name", "N/D")), "IP Resuelta": "None"})
+    for _, row in dns_failures.iterrows():
+        fig4_rows.append({"ID de Sonda": str(row.get("prb_id", "N/D")), "Fecha y Hora (CST)": _format_timestamp(row.get("timestamp")), "Dominio Objetivo": str(row.get("dst_name", "N/D")), "IP Resuelta": "None"})
 
     fig5_rows = []
     if "prb_id" in measurements.columns:
-        for i, (prb_id, group) in enumerate(measurements.groupby("prb_id", dropna=False)):
+        for prb_id, group in measurements.groupby("prb_id", dropna=False):
             group = group.sort_values("timestamp") if "timestamp" in group.columns else group
             first_ts = group["timestamp"].min() if "timestamp" in group.columns else None
             last_ts = group["timestamp"].max() if "timestamp" in group.columns else None
             total = int(len(group))
             duration = str(pd.Timedelta(seconds=float(last_ts - first_ts))).split(".")[0] if pd.notna(first_ts) and pd.notna(last_ts) else "N/D"
-            fig5_rows.append({"": str(i), "Probe_ID": str(prb_id), "Primera_Conexion": _format_timestamp(first_ts), "Ultima_Conexion": _format_timestamp(last_ts), "Total_Mediciones": total, "Tiempo_Activo": duration, "Mediciones_Perdidas": max(0, expected_per_probe - total), "Disponibilidad (Uptime)": f"{_percent(total, expected_per_probe)} %" if expected_per_probe else "N/D"})
+            fig5_rows.append({"Probe_ID": str(prb_id), "Primera_Conexion": _format_timestamp(first_ts), "Ultima_Conexion": _format_timestamp(last_ts), "Total_Mediciones": total, "Tiempo_Activo": duration, "Mediciones_Perdidas": max(0, expected_per_probe - total), "Disponibilidad (Uptime)": f"{_percent(total, expected_per_probe)} %" if expected_per_probe else "N/D"})
         fig5_rows = sorted(fig5_rows, key=lambda row: int(row["Total_Mediciones"]), reverse=True)
 
     blocks_df, blackout_probe, gaps_rows = _build_availability_blocks(measurements, expected_per_probe, interval_seconds)
@@ -210,7 +236,7 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
     if packet_probe_rows:
         packet_probe_rows.append({"ID Sonda": "TOTAL", "Paquetes_Enviados_Al_Destino": sent_total, "Recibidos": recv_total, "Perdidos": lost_total, "Exito (%)": f"{_percent(recv_total, sent_total)} %", "Perdida (%)": f"{_percent(lost_total, sent_total)} %"})
 
-    pattern_counts: dict[str, int] = {"3 de 3 paquetes llegaron": 0, "2 de 3 paquetes llegaron": 0, "1 de 3 paquetes llego": 0, "0 de 3 paquetes llegaron": 0}
+    pattern_counts: dict[str, int] = {"3 de 3 paquetes llegaron": 0, "2 de 3 paquetes llegaron": 0, "1 de 3 paquetes llegaron": 0, "0 de 3 paquetes llegaron": 0}
     if not final_packets.empty:
         keys = [key for key in MEASUREMENT_KEYS if key in final_packets.columns]
         for _, group in final_packets.groupby(keys, dropna=False):
@@ -218,12 +244,12 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
             total_attempts_group = int(len(group))
             label = f"{ok} de {total_attempts_group} paquetes llegaron"
             pattern_counts[label] = pattern_counts.get(label, 0) + 1
-    discarded_control = pattern_counts.get("2 de 3 paquetes llegaron", 0) + (pattern_counts.get("1 de 3 paquetes llego", 0) * 2)
+    discarded_control = pattern_counts.get("2 de 3 paquetes llegaron", 0) + (pattern_counts.get("1 de 3 paquetes llegaron", 0) * 2)
     fig8_text = "\n".join([
         "Auditoria de patrones de descarte en el salto final.",
         f"Mediciones sin descarte: {pattern_counts.get('3 de 3 paquetes llegaron', 0)}.",
         f"Descarte selectivo leve: {pattern_counts.get('2 de 3 paquetes llegaron', 0)}.",
-        f"Descarte severo: {pattern_counts.get('1 de 3 paquetes llego', 0)}.",
+        f"Descarte severo: {pattern_counts.get('1 de 3 paquetes llegaron', 0)}.",
         f"Perdida total de ruta: {pattern_counts.get('0 de 3 paquetes llegaron', 0)}.",
         f"Total de paquetes descartados por control parcial: {discarded_control}.",
     ])
@@ -234,6 +260,32 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
     packet_availability_pct = _percent(recv_total, sent_total)
     route_availability_pct = _percent(route_complete, total_real)
     dns_success = int(total_real - len(dns_failures))
+
+    dns_probes = [str(r["ID de Sonda"]) for r in fig4_rows if r.get("ID de Sonda") != "N/D"]
+    dns_probes_str = ", ".join(dict.fromkeys(dns_probes))
+    fig3_title = f"Detalle de fallas de DNS en la sonda {dns_probes_str}" if dns_probes_str else "Detalle de fallas de DNS por sonda"
+    fig4_title = f"Registro de periodos de inactividad de la sonda {blackout_probe}" if blackout_probe else "Registro de periodos de inactividad por sonda"
+
+    fig7_pattern_rows = [
+        {"Patron": "3 de 3 paquetes recibidos (Perfectas)", "Mediciones": pattern_counts.get("3 de 3 paquetes llegaron", 0), "Proporcion (%)": f"{_percent(pattern_counts.get('3 de 3 paquetes llegaron', 0), total_real)} %", "Diagnostico": "Ruta integra sin descarte"},
+        {"Patron": "2 de 3 paquetes recibidos (Micro-saturacion leve)", "Mediciones": pattern_counts.get("2 de 3 paquetes llegaron", 0), "Proporcion (%)": f"{_percent(pattern_counts.get('2 de 3 paquetes llegaron', 0), total_real)} %", "Diagnostico": "Rate-limiting / descarte leve"},
+        {"Patron": "1 de 3 paquetes recibidos (Micro-saturacion fuerte)", "Mediciones": pattern_counts.get("1 de 3 paquetes llegaron", 0), "Proporcion (%)": f"{_percent(pattern_counts.get('1 de 3 paquetes llegaron', 0), total_real)} %", "Diagnostico": "Descarte severo en firewall"},
+        {"Patron": "0 de 3 paquetes recibidos (Caida de ruta)", "Mediciones": pattern_counts.get("0 de 3 paquetes llegaron", 0), "Proporcion (%)": f"{_percent(pattern_counts.get('0 de 3 paquetes llegaron', 0), total_real)} %", "Diagnostico": "Perdida total de ruta"},
+    ]
+
+    fig4_desc = (
+        f"Al filtrar los {total_real:,} registros crudos buscando el campo 'dst_addr' vacio (null), "
+        f"el sistema arrojo exactamente {len(fig4_rows)} resultados."
+        + (f" Pertenecen a la sonda {dns_probes_str}." if dns_probes_str else "")
+    )
+    packet_loss_pct = _percent(lost_total, sent_total)
+    fig9_desc = (
+        f"Sintesis de metricas de disponibilidad: Disponibilidad de ruta del {route_availability_pct:.2f}% "
+        f"({route_complete:,} de {total_real:,} mediciones alcanzaron el destino). "
+        f"Perdida granular de paquetes de {packet_loss_pct:.2f}% "
+        f"({lost_total:,} de {sent_total:,} paquetes), atribuible a rate-limiting preventivo en el firewall de borde.\n\n"
+        "Nota metodologica: Se omite la grafica externa de la plataforma RIPE Atlas segun documentacion de orden y fases."
+    )
 
     base.update({
         "metricas_resumen": {
@@ -252,15 +304,31 @@ def execute(df: pd.DataFrame, inv_id: int) -> dict:
         },
         "report_tables": [],
         "report_figures": [
-            {"id": "1", "title": "Distribucion de mediciones por direccion IP de destino resuelta", "kind": "table", "columns": ["", "Dest_IP", "Probe_ID", "Total_Measurements", "Successful_Reaches", "Success_Rate_%"], "rows": fig1_rows},
+            {"id": "1", "title": "Distribucion de mediciones por direccion IP de destino resuelta", "kind": "table", "columns": ["N", "Dest_IP", "Probe_ID", "Total_Measurements", "Successful_Reaches", "Success_Rate_%"], "rows": fig1_rows},
             {"id": "2", "title": "Detalle de mediciones por categoria de destino", "kind": "bar", "categoryKey": "categoria", "dataKeys": fig2_ips, "rows": fig2_rows},
-            {"id": "3", "title": "Calculo de embudo de datos: mediciones esperadas vs reales", "kind": "table", "columns": ["Estado de Medicion", "Cantidad", "Proporcion"], "rows": fig3_rows},
-            {"id": "4", "title": "Detalle de fallas de DNS en sondas con destino no resuelto", "kind": "table", "columns": ["", "ID de Sonda", "Fecha y Hora (CST)", "Dominio Objetivo", "IP Resuelta"], "rows": fig4_rows},
-            {"id": "5", "title": "Tabla analitica de desconexiones por sonda durante la semana de medicion", "kind": "table", "columns": ["", "Probe_ID", "Primera_Conexion", "Ultima_Conexion", "Total_Mediciones", "Tiempo_Activo", "Mediciones_Perdidas", "Disponibilidad (Uptime)"], "rows": fig5_rows},
-            {"id": "6", "title": "Distribucion temporal de mediciones de las sondas que han tenido apagones", "type": "PNG", "url": base.get("grafica_png_url"), "caption": f"Distribucion temporal de mediciones de la sonda con menor disponibilidad ({blackout_probe or 'N/D'})."},
-            {"id": "7", "title": "Distribucion de paquetes recibidos por medicion", "kind": "table", "columns": ["ID Sonda", "Paquetes_Enviados_Al_Destino", "Recibidos", "Perdidos", "Exito (%)", "Perdida (%)"], "rows": packet_probe_rows},
-            {"id": "8", "title": "Resumen estadistico de perdida de paquetes a nivel granular", "kind": "text", "type": "INTERPRETATION_BLOCK", "description": fig8_text},
-            {"id": "9", "title": "Sintesis de metricas de disponibilidad de la Fase 1", "kind": "text", "type": "INTERPRETATION_BLOCK", "description": "Omitida en el documento de referencia: corresponde a una grafica de la plataforma RIPE, por lo que no se genera como figura de la app."},
+            {"id": "3", "title": fig3_title, "kind": "table", "columns": ["Estado de Medicion", "Cantidad", "Proporcion"], "rows": fig3_rows, "caption": "Figura 3. Resumen de Volumen de Mediciones (Esperadas vs. Reales)."},
+            {"id": "4", "title": "Registro de periodos de inactividad por sonda", "kind": "table", "columns": ["ID de Sonda", "Fecha y Hora (CST)", "Dominio Objetivo", "IP Resuelta"], "rows": fig4_rows, "caption": f"Figura 4. Evidencia de aborto por falla de resolucion DNS{f' en la sonda {dns_probes_str}' if dns_probes_str else ''}.", "description": fig4_desc},
+            {
+                "id": "5",
+                "title": "Tabla analitica de desconexiones por sonda durante la semana de medicion",
+                "kind": "table",
+                "columns": ["Probe_ID", "Primera_Conexion", "Ultima_Conexion", "Total_Mediciones", "Tiempo_Activo", "Mediciones_Perdidas", "Disponibilidad (Uptime)"],
+                "rows": fig5_rows,
+                "caption": "Figura 5. Tabla analitica de desconexiones por sonda durante la semana de medicion.",
+            },
+            {
+                "id": "6",
+                "title": f"Distribucion temporal de mediciones de la sonda {blackout_probe or 'inestable'} (tiempos de actividad y caida)",
+                "type": "CHART",
+                "kind": "gantt",
+                "probe_id": blackout_probe,
+                "url": base.get("grafica_png_url"),
+                "rows": blocks_df.to_dict(orient="records") if not blocks_df.empty else [],
+                "caption": f"Distribucion temporal de mediciones de la sonda con menor disponibilidad ({blackout_probe or 'N/D'}). Barras verdes = activo; barras rojas = desconexion.",
+            },
+            {"id": "7", "title": "Distribucion de paquetes recibidos por medicion (0, 1, 2 o 3 paquetes respondidos)", "kind": "table", "columns": ["ID Sonda", "Paquetes_Enviados_Al_Destino", "Recibidos", "Perdidos", "Exito (%)", "Perdida (%)"], "rows": packet_probe_rows, "caption": "Figura 7. Auditoria de paquetes en destino final por sonda."},
+            {"id": "8", "title": "Resumen estadistico de perdida de paquetes a nivel granular", "kind": "table", "columns": ["Patron", "Mediciones", "Proporcion (%)", "Diagnostico"], "rows": fig7_pattern_rows, "caption": f"Figura 8. Auditoria de patrones de descarte (firewall/rate-limiting). {fig8_text}"},
+            {"id": "9", "title": "Sintesis de metricas de disponibilidad de la Fase 1", "kind": "text", "type": "INTERPRETATION_BLOCK", "caption": "Figura 9. Sintesis de metricas de disponibilidad de la Fase 1 (La omitimos porque es una grafica de la plataforma de RIPE).", "description": fig9_desc},
         ],
     })
     return base

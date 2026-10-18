@@ -146,6 +146,7 @@
   body {
     @apply bg-background text-foreground;
     text-rendering: optimizeLegibility;
+    min-width: 320px;
   }
 
   button, a, input, textarea, [role="button"] {
@@ -156,7 +157,42 @@
 }
 
 @layer components {
-  .app-shell { background: radial-gradient(circle at 100% 0%, oklch(0.25 0.045 245 / .4), transparent 34rem), var(--background); }
+  .app-shell {
+    background:
+      radial-gradient(circle at 82% -12%, oklch(0.3 0.065 248 / .22), transparent 36rem),
+      linear-gradient(180deg, oklch(0.17 0.018 255), var(--background) 18rem);
+  }
+  .workspace-header {
+    background: color-mix(in oklch, var(--background) 92%, transparent);
+    box-shadow: 0 1px 0 oklch(0.7 0.02 250 / .08);
+  }
+  .workspace-logo {
+    box-shadow: inset 0 1px 0 oklch(0.97 0.01 250 / .2), 0 4px 12px oklch(0.08 0.02 255 / .24);
+  }
+  .workspace-main {
+    background: color-mix(in oklch, var(--background) 94%, oklch(0.26 0.06 248));
+  }
+  .phase-navigation {
+    background: color-mix(in oklch, var(--background) 94%, transparent);
+    box-shadow: 0 1px 0 oklch(0.7 0.02 250 / .08);
+  }
+  .investigation-library {
+    background: linear-gradient(145deg, color-mix(in oklch, var(--card) 96%, oklch(0.35 0.07 245)), var(--card));
+  }
+  .investigation-item {
+    position: relative;
+    transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .investigation-item:hover { transform: translateX(2px); }
+  }
+  .upload-dropzone {
+    background: linear-gradient(145deg, color-mix(in oklch, var(--muted) 74%, transparent), color-mix(in oklch, var(--card) 90%, transparent));
+    transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .upload-dropzone:hover { border-color: color-mix(in oklch, var(--primary) 70%, var(--border)); transform: translateY(-1px); }
+  }
   .report-surface { @apply overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_rgb(0_0_0_/_0.16)]; }
   .report-table { @apply overflow-x-auto rounded-lg border border-border bg-[var(--surface-subtle)]; }
   .report-table table { @apply min-w-[760px]; }
@@ -166,41 +202,236 @@
 
 @media print {
   @page {
-    margin: 14mm;
-    size: A4;
+    margin: 16mm 14mm;
+    size: letter;
+  }
+
+  /* 1. FORCE ABSOLUTE WHITE/LIGHT MODE FOR ALL SELECTORS */
+  :root,
+  html,
+  html.dark,
+  body,
+  .dark,
+  [data-theme="dark"],
+  [data-slot="card"] {
+    --background: #ffffff !important;
+    --foreground: #000000 !important;
+    --card: #ffffff !important;
+    --card-foreground: #000000 !important;
+    --popover: #ffffff !important;
+    --popover-foreground: #000000 !important;
+    --primary: #000000 !important;
+    --primary-foreground: #ffffff !important;
+    --secondary: #f8fafc !important;
+    --secondary-foreground: #000000 !important;
+    --muted: #f1f5f9 !important;
+    --muted-foreground: #334155 !important;
+    --accent: #f1f5f9 !important;
+    --accent-foreground: #000000 !important;
+    --border: #cbd5e1 !important;
+    --input: #cbd5e1 !important;
+    --ring: #000000 !important;
+    --surface-subtle: #ffffff !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    color-scheme: light !important;
+  }
+
+  /* 2. UNIVERSAL RESET: Strip all shadows, dark backgrounds, and glow effects */
+  *,
+  *::before,
+  *::after {
+    color-scheme: light !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
   html,
   body {
-    background: white !important;
-    color: black !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.6 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  body {
-    font-size: 11pt;
+  /* Structural wrappers must NOT paint dark backgrounds and must expand naturally */
+  html,
+  body,
+  .app-shell,
+  .workspace-main,
+  main,
+  [data-slot="tabs-content"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
   }
 
-  header,
-  aside,
-  nav,
-  [data-slot="tabs-list"] {
-    display: none !important;
-  }
-
+  .app-shell,
+  .workspace-main,
   main,
   section,
-  figure,
-  [data-slot="card"] {
-    break-inside: avoid;
-  }
-
-  [data-slot="card"] {
+  article,
+  div,
+  aside,
+  header {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
   }
 
-  img,
-  svg,
-  canvas {
+  /* Hide app navigation, headers, chat panel, buttons, tabs, tools */
+  header.app-header,
+  header,
+  aside,
+  nav:not(.academic-toc),
+  [data-slot="tabs-list"],
+  .app-header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Academic chapters: start cleanly on a new printed page */
+  #chapter-1,
+  #chapter-2,
+  #chapter-3,
+  #chapter-4,
+  #chapter-5,
+  #chapter-6,
+  #chapter-7 {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  #chapter-4 {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Headings: formal black academic titles */
+  h1, h2, h3, h4, h5, h6 {
+    color: #000000 !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  p {
+    color: #111827 !important;
+    orphans: 3;
+    widows: 3;
+    line-height: 1.65 !important;
+  }
+
+  /* Clean academic figures */
+  figure,
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+  }
+
+  figcaption {
+    color: #374151 !important;
+    font-size: 8.5pt !important;
+    font-style: italic !important;
+    margin-top: 4px !important;
+  }
+
+  /* Strip all card appearances in print: no borders, no rounded corners, no cards */
+  [data-slot="card"],
+  .report-surface,
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+  }
+
+  /* Academic formal tables */
+  .report-table {
+    border: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    width: 100% !important;
+    margin: 8px 0 !important;
+  }
+
+  .report-table table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-top: 2px solid #000000 !important;
+    border-bottom: 2px solid #000000 !important;
+  }
+
+  .report-table thead {
+    display: table-header-group !important;
+    border-bottom: 1px solid #000000 !important;
+  }
+
+  .report-table th {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    font-size: 8.5pt !important;
+    padding: 5px 6px !important;
+    border-bottom: 1px solid #000000 !important;
+    background-color: #f1f5f9 !important;
+  }
+
+  .report-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .report-table td {
+    color: #111827 !important;
+    font-size: 8.5pt !important;
+    padding: 4px 6px !important;
+  }
+
+  /* Turn badge pills into clean text inside tables */
+  .report-table td span {
+    border: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: #111827 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-table td span span.rounded-full {
+    display: none !important;
+  }
+
+  /* Vector charts / Recharts */
+  .recharts-responsive-container,
+  svg {
+    background: transparent !important;
     max-width: 100% !important;
+  }
+
+  .recharts-cartesian-axis-tick text,
+  text.recharts-text {
+    fill: #1f2937 !important;
+    font-size: 9pt !important;
+  }
+
+  .recharts-cartesian-grid-line line {
+    stroke: #e2e8f0 !important;
+  }
+
+  .recharts-cartesian-axis-line line,
+  .recharts-cartesian-axis-tick-line line {
+    stroke: #64748b !important;
   }
 }
