@@ -29,7 +29,7 @@ export function Fase3View({ data }: { data: FaseResponse }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 print:block">
         {elements.map((el, i) => (
           <ElementRenderer key={`${el.type}-${el.id}-${i}`} element={el} />
         ))}

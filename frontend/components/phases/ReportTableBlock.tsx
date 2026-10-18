@@ -31,7 +31,58 @@ function isIpOrAsnValue(val: unknown): boolean {
 
 function formatValue(value: string | number): string {
   if (typeof value === "number") return Number.isInteger(value) ? value.toLocaleString("es") : value.toFixed(2)
+  if (typeof value === "string") {
+    return value.replace(/\s+ms\b/gi, "\u00A0ms").replace(/\s+%/g, "\u00A0%")
+  }
   return String(value)
+}
+
+function formatColumnHeader(col: string): string {
+  const map: Record<string, string> = {
+    SALTOS_PROMEDIO: "Saltos Prom.",
+    Saltos_Promedio: "Saltos Prom.",
+    MIN_RTT: "Min RTT",
+    Min_RTT: "Min RTT",
+    MEDIANA_RTT: "Mediana RTT",
+    Mediana_RTT: "Mediana RTT",
+    PROMEDIO_RTT: "Prom. RTT",
+    Promedio_RTT: "Prom. RTT",
+    MAX_RTT: "Max RTT",
+    Max_RTT: "Max RTT",
+    JITTER_STDDEV: "Jitter StdDev",
+    Jitter_StdDev: "Jitter StdDev",
+    "PACKET_LOSS_%": "Pérdida (%)",
+    "Packet_Loss_%": "Pérdida (%)",
+    "Loss_%": "Pérdida (%)",
+    Probe_ID: "Sonda",
+    PROBE_ID: "Sonda",
+    "ID Sonda": "Sonda",
+    Dest_IP: "IP Destino",
+    Total_Measurements: "Total Med.",
+    Successful_Reaches: "Éxitos",
+    "Success_Rate_%": "Éxito (%)",
+    Primera_Conexion: "Primera Conexión",
+    Ultima_Conexion: "Última Conexión",
+    Tiempo_Activo: "Tiempo Activo",
+    Mediciones_Perdidas: "Med. Perdidas",
+    "Disponibilidad (Uptime)": "Uptime (%)",
+    Paquetes_Enviados_Al_Destino: "Paq. Enviados",
+    Recibidos: "Recibidos",
+    Perdidos: "Perdidos",
+    "Exito (%)": "Éxito (%)",
+    "Perdida (%)": "Pérdida (%)",
+    Hop: "Salto",
+    IP: "Dirección IP",
+    ASN: "ASN",
+    ISP: "Proveedor",
+    "RTT local (ms)": "RTT Local",
+    "RTT total destino (ms)": "RTT Destino",
+    "Hops totales": "Saltos",
+    "Overhead Path Inflation (ms)": "Overhead",
+    "Exceso vs linea base (ms)": "Exceso Base",
+  }
+  if (map[col]) return map[col]
+  return col.replace(/_/g, " ")
 }
 
 const ISP_META: Record<string, { dot: string }> = {
@@ -192,26 +243,26 @@ function renderCellContent(column: string, rawValue: string | number | undefined
     if (!isNaN(num)) {
       if (num >= 40) {
         return (
-          <span className="inline-flex items-center rounded-md bg-rose-500/15 px-2 py-0.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400 border border-rose-500/30">
-            +{num.toFixed(1)} ms
+          <span className="inline-flex items-center rounded-md bg-rose-500/15 px-2 py-0.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400 border border-rose-500/30 whitespace-nowrap">
+            +{num.toFixed(1)}&nbsp;ms
           </span>
         )
       }
       if (num >= 20) {
         return (
-          <span className="inline-flex items-center rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30">
-            +{num.toFixed(1)} ms
+          <span className="inline-flex items-center rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+            +{num.toFixed(1)}&nbsp;ms
           </span>
         )
       }
       if (num > 0) {
         return (
-          <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            +{num.toFixed(1)} ms
+          <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+            +{num.toFixed(1)}&nbsp;ms
           </span>
         )
       }
-      return <span className="font-mono text-muted-foreground/60">0.0 ms</span>
+      return <span className="font-mono text-muted-foreground/60 whitespace-nowrap">0.0&nbsp;ms</span>
     }
   }
 
@@ -220,14 +271,14 @@ function renderCellContent(column: string, rawValue: string | number | undefined
     const num = typeof rawValue === "number" ? rawValue : parseFloat(String(rawValue).replace(/[^\d.-]/g, ""))
     if (!isNaN(num)) {
       if (num <= 2.0) {
-        return <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400">{num.toFixed(2)} ms</span>
+        return <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{num.toFixed(2)}&nbsp;ms</span>
       }
       if (num <= 5.0) {
-        return <span className="font-mono font-medium text-amber-600 dark:text-amber-400">{num.toFixed(2)} ms</span>
+        return <span className="font-mono font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">{num.toFixed(2)}&nbsp;ms</span>
       }
       return (
-        <span className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-          {num.toFixed(2)} ms
+        <span className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 whitespace-nowrap">
+          {num.toFixed(2)}&nbsp;ms
         </span>
       )
     }
@@ -238,17 +289,17 @@ function renderCellContent(column: string, rawValue: string | number | undefined
     const num = typeof rawValue === "number" ? rawValue : parseFloat(String(rawValue).replace(/[^\d.-]/g, ""))
     if (!isNaN(num)) {
       if (num < 15) {
-        return <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{num.toFixed(1)} ms</span>
+        return <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{num.toFixed(1)}&nbsp;ms</span>
       }
       if (num < 40) {
-        return <span className="font-mono font-medium text-sky-600 dark:text-sky-400">{num.toFixed(1)} ms</span>
+        return <span className="font-mono font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">{num.toFixed(1)}&nbsp;ms</span>
       }
       if (num < 75) {
-        return <span className="font-mono font-medium text-amber-600 dark:text-amber-400">{num.toFixed(1)} ms</span>
+        return <span className="font-mono font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">{num.toFixed(1)}&nbsp;ms</span>
       }
       return (
-        <span className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
-          {num.toFixed(1)} ms
+        <span className="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 whitespace-nowrap">
+          {num.toFixed(1)}&nbsp;ms
         </span>
       )
     }
@@ -322,7 +373,7 @@ function renderCellContent(column: string, rawValue: string | number | undefined
   }
 
   if (typeof rawValue === "number" || isNumericColumn(column) || isMonospaceColumn(column)) {
-    return <span className={`font-mono ${isRowSummary ? "font-bold text-foreground" : ""}`}>{formatted}</span>
+    return <span className={`font-mono whitespace-nowrap ${isRowSummary ? "font-bold text-foreground" : ""}`}>{formatted}</span>
   }
 
   return isRowSummary ? <span className="font-bold text-foreground">{formatted}</span> : formatted
@@ -386,9 +437,9 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
   }, [columns, rows, isSearchActive, filteredRows])
 
   return (
-    <figure className="break-inside-avoid print:break-inside-avoid w-full print:my-6">
-      <Card className="report-surface border border-border/50 transition-all duration-200 hover:border-border/80 w-full print:border-none print:shadow-none print:bg-transparent print:p-0 print:rounded-none">
-        <CardHeader className="flex flex-col gap-3 border-b border-border sm:flex-row sm:items-start sm:justify-between print:p-0 print:border-none print:mb-2">
+    <figure className="break-inside-avoid print:break-inside-avoid w-full print:my-6 print:block">
+      <Card className="report-surface border border-border/50 transition-all duration-200 hover:border-border/80 w-full print:border-none print:shadow-none print:bg-transparent print:p-0 print:rounded-none print:block print:break-inside-avoid">
+        <CardHeader className="flex flex-col gap-3 border-b border-border sm:flex-row sm:items-start sm:justify-between print:p-0 print:border-none print:mb-2 print:block">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 print:gap-0">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary print:hidden">
@@ -560,17 +611,21 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
               className="w-full border-collapse font-sans text-[12px] text-foreground"
             >
               <thead>
-                <tr className="border-b border-border/60 bg-muted/30 text-muted-foreground">
-                  {columns.map((column) => (
-                    <th
-                      key={column}
-                      className={`border-b border-border px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-wider ${
-                        isNumericColumn(column) ? "text-right font-mono tabular-nums" : "text-left"
-                      }`}
-                    >
-                      {column}
-                    </th>
-                  ))}
+                <tr className="border-b border-border/60 bg-muted/30 text-muted-foreground print:bg-[#f1f5f9]">
+                  {columns.map((column) => {
+                    const isNum = isNumericColumn(column)
+                    const isId = /^(ID Sonda|Probe_ID|Sonda|N|#|Hop)$/i.test(column.trim())
+                    return (
+                      <th
+                        key={column}
+                        className={`border-b border-border px-3 py-2.5 print:px-1 print:py-1 font-mono text-[10px] print:text-[7pt] font-semibold uppercase tracking-wider ${
+                          isNum ? "text-right font-mono tabular-nums numeric-col whitespace-nowrap print:whitespace-nowrap" : isId ? "text-center whitespace-nowrap" : "text-left whitespace-normal"
+                        }`}
+                      >
+                        {formatColumnHeader(column)}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -613,16 +668,24 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
                             : "border-border/40 hover:bg-muted/30"
                         } ${isClippedByLimit ? "hidden print:table-row" : ""}`}
                       >
-                        {columns.map((column) => (
-                          <td
-                            key={column}
-                            className={`max-w-[360px] whitespace-normal px-4 py-3 align-middle ${
-                              isNumericColumn(column) ? "text-right font-mono tabular-nums" : "text-left"
-                            }`}
-                          >
-                            {renderCellContent(column, row[column], row)}
-                          </td>
-                        ))}
+                        {columns.map((column) => {
+                          const isNum = isNumericColumn(column)
+                          const isId = /^(ID Sonda|Probe_ID|Sonda|N|#|Hop)$/i.test(column.trim())
+                          return (
+                            <td
+                              key={column}
+                              className={`px-3 py-2.5 print:px-1 print:py-1 align-middle text-[11px] print:text-[7.2pt] ${
+                                isNum
+                                  ? "text-right font-mono tabular-nums whitespace-nowrap print:whitespace-nowrap numeric-col"
+                                  : isId
+                                  ? "text-center font-mono whitespace-nowrap print:whitespace-nowrap"
+                                  : "text-left whitespace-normal break-words max-w-[280px] print:max-w-[140px]"
+                              }`}
+                            >
+                              {renderCellContent(column, row[column], row)}
+                            </td>
+                          )
+                        })}
                       </tr>
                     )
                   })
@@ -664,7 +727,7 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
           ) : null}
         </CardContent>
       </Card>
-      <figcaption className="mt-2 text-left px-1 text-xs text-muted-foreground break-after-avoid print:break-after-avoid">
+      <figcaption className="mt-2 text-left px-1 text-xs text-muted-foreground break-after-avoid print:break-after-avoid print:block">
         {caption}
       </figcaption>
     </figure>

@@ -92,7 +92,7 @@ function formatCategoryLabel(value: any): string {
 }
 
 function ChartSurface({ children }: { children: React.ReactNode }) {
-  return <div className="mt-5 h-[410px] w-full rounded-xl border border-border bg-[var(--surface-subtle)] p-4 print:mt-2 print:h-[340px] print:border-none print:bg-transparent print:p-0">{children}</div>
+  return <div className="mt-5 h-[410px] w-full rounded-xl border border-border bg-[var(--surface-subtle)] p-4 print:mt-2 print:h-auto print:min-h-[300px] print:border-none print:bg-transparent print:p-0 print:block">{children}</div>
 }
 
 function BoxPlotSvg({ rows }: { rows: any[] }) {
@@ -108,11 +108,13 @@ function BoxPlotSvg({ rows }: { rows: any[] }) {
   const bottomAxisY = margin.top + plotH
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" role="img">
-      <rect x="0" y="0" width={width} height={height} fill="transparent" />
-      {[0, 5, 10, 15, 20].map((tick) => (
-        <g key={tick}>
-          <line x1={margin.left} x2={width - margin.right} y1={scaleY(tick)} y2={scaleY(tick)} stroke={GRID} strokeDasharray="3 3" />
+    <div className="relative flex flex-col w-full h-full print:block">
+      <div className="relative flex-1 w-full min-h-[300px] print:block print:w-full print:h-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible print:h-auto print:max-h-[370px]" preserveAspectRatio="xMidYMid meet" role="img">
+          <rect x="0" y="0" width={width} height={height} fill="transparent" />
+          {[0, 5, 10, 15, 20].map((tick) => (
+            <g key={tick}>
+              <line x1={margin.left} x2={width - margin.right} y1={scaleY(tick)} y2={scaleY(tick)} stroke={GRID} strokeDasharray="3 3" />
           <text x={margin.left - 10} y={scaleY(tick) + 4} textAnchor="end" fill="var(--muted-foreground, #94a3b8)" fontSize="11" fontFamily="var(--font-mono)">{tick}</text>
         </g>
       ))}
@@ -164,6 +166,8 @@ function BoxPlotSvg({ rows }: { rows: any[] }) {
         )
       })}
     </svg>
+      </div>
+    </div>
   )
 }
 
@@ -213,14 +217,14 @@ function GanttChartSvg({ rows, probeId }: { rows: any[]; probeId?: string }) {
   const totalOutageHours = (totalOutageSeconds / 3600).toFixed(1)
 
   return (
-    <div className="relative flex flex-col w-full h-full">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+    <div className="relative flex flex-col w-full h-full print:block">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs print:mb-2 print:flex">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-muted-foreground">Sonda:</span>
           <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
             {probeId || rows[0]?.probe_id || "N/D"}
           </span>
-          <span className="hidden sm:inline text-muted-foreground">
+          <span className="hidden sm:inline print:inline text-muted-foreground">
             ({outages.length} caídas · {totalOutageHours} hrs totales fuera de servicio)
           </span>
         </div>
@@ -236,8 +240,8 @@ function GanttChartSvg({ rows, probeId }: { rows: any[]; probeId?: string }) {
         </div>
       </div>
 
-      <div className="relative flex-1 w-full min-h-[260px]">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" role="img">
+      <div className="relative flex-1 w-full min-h-[260px] print:block print:w-full print:h-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible print:h-auto print:max-h-[300px]" preserveAspectRatio="xMidYMid meet" role="img">
           <rect x="0" y="0" width={width} height={height} fill="transparent" />
 
           {dayTicks.map((dt, idx) => {
@@ -488,24 +492,38 @@ export function ElementRenderer({ element }: { element: ReportElement }) {
 
   if (element.type === "INTERPRETATION_BLOCK") {
     const text = element.description || element.content || "Sin descripcion disponible."
+    const isNumberedFigure = /^\d+$/.test(String(element.id || ""))
+    const displayTitle = isNumberedFigure
+      ? `Figura ${element.id}. ${element.title || "Interpretación Metodológica"}.`
+      : element.title || "Interpretación Metodológica"
+    const figureSource = element.source || "elaboración propia con datos procesados por NetScope desde RIPE Atlas"
+    const figureCaption = `${element.caption || displayTitle} Fuente: ${figureSource}.`
+
     return (
-      <Card className="report-surface border border-border/50 bg-card/60 backdrop-blur-sm transition-all duration-200 hover:border-border/80 print:rounded-none print:border-none print:shadow-none print:bg-transparent print:p-0 print:my-3 print:break-inside-avoid">
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 border-b border-border pb-3 print:border-none print:p-0 print:pb-1.5">
-          <div className="flex items-center gap-2 print:gap-0">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary print:hidden">
-              <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+      <figure className="break-inside-avoid w-full print:my-6 print:break-inside-avoid">
+        <Card className="report-surface border border-border/50 bg-card/60 backdrop-blur-sm transition-all duration-200 hover:border-border/80 w-full print:rounded-none print:border-none print:shadow-none print:bg-transparent print:p-0 print:my-2 print:break-inside-avoid">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 border-b border-border pb-3 print:border-none print:p-0 print:pb-1.5">
+            <div className="flex items-center gap-2 print:gap-0">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary print:hidden">
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+              </div>
+              <CardTitle className="text-base font-semibold print:text-[11pt] print:font-bold print:text-black print:mb-1">
+                {displayTitle}
+              </CardTitle>
             </div>
-            <CardTitle className="text-base font-semibold print:text-[12pt] print:font-bold print:text-black print:mb-1">
-              {element.title || "Interpretación Metodológica"}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4 print:p-0 print:pt-1">
-          <p className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90 print:text-[10.5pt] print:leading-[1.7] print:text-black print:text-justify font-sans">
-            {text}
-          </p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="pt-4 print:p-0 print:pt-1">
+            <p className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90 print:text-[10pt] print:leading-[1.65] print:text-black print:text-justify font-sans">
+              {text}
+            </p>
+          </CardContent>
+        </Card>
+        {isNumberedFigure && (
+          <figcaption className="mt-2 text-left px-1 text-xs text-muted-foreground print:text-[9pt] print:italic print:text-gray-700 print:mt-1.5">
+            {figureCaption}
+          </figcaption>
+        )}
+      </figure>
     )
   }
 

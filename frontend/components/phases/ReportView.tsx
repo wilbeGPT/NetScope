@@ -662,8 +662,8 @@ export function ReportView({
       </section>
 
       {/* Capítulo 4. Resultados (Donde viven todas las 5 fases) */}
-      <section id="chapter-4" className="flex scroll-mt-20 flex-col gap-8 print:break-before-page">
-        <div className="flex flex-col gap-2 border-b border-border pb-4 print:border-b-2 print:border-black print:pb-2 print:mb-2">
+      <section id="chapter-4" className="flex scroll-mt-20 flex-col gap-8 print:break-before-page print:block">
+        <div className="flex flex-col gap-2 border-b border-border pb-4 print:border-b-2 print:border-black print:pb-2 print:mb-2 print:block">
           <div className="flex items-center gap-2 print:hidden">
             <Badge variant="outline" className="font-mono text-xs text-primary border-primary/30">
               Capítulo 4
@@ -678,15 +678,15 @@ export function ReportView({
           </p>
         </div>
 
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-10 print:block">
           {phaseSections.map((sec) => {
             const hasElements = Boolean(sec.data?.elements && sec.data.elements.length > 0)
             const phaseInt = parseInt(sec.phaseNum.split(".")[1], 10)
             const isThisPhaseRunning = isRunningAll && runningPhaseNum === phaseInt
 
             return (
-              <div id={sec.id} key={sec.id} className="flex scroll-mt-20 break-inside-avoid flex-col gap-5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2 print:border-b print:border-gray-400 print:pb-1.5 print:mt-6 print:mb-2">
+              <div id={sec.id} key={sec.id} className="flex scroll-mt-20 flex-col gap-5 print:block print:mt-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2 print:border-b print:border-gray-400 print:pb-1.5 print:mt-6 print:mb-2 print:block">
                   <h3 className="text-lg font-semibold tracking-tight text-foreground print:text-[13pt] print:font-bold print:text-black">
                     {sec.title}
                   </h3>

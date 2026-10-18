@@ -1,12 +1,14 @@
 "use client"
 
 import { Suspense } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { ChatPanel } from "@/components/layout/ChatPanel"
 import { PhasePanel } from "@/components/layout/PhasePanel"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { Badge } from "@/components/ui/badge"
-import { BarChart3, ChevronRight, Layers3 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, BarChart3, ChevronRight, Layers3, Plus } from "lucide-react"
 import { useInvestigation } from "./useInvestigation"
 
 function parseInvestigationId(value: string | string[] | undefined): number | null {
@@ -39,17 +41,52 @@ function InvestigacionContent({ id }: { id: number }) {
     <div className="app-shell flex h-svh w-full flex-col">
       <header className="workspace-header flex h-16 shrink-0 items-center justify-between border-b border-border px-4 backdrop-blur-sm sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="workspace-logo flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <BarChart3 className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="text-sm font-semibold tracking-tight">NetScope</span>
-            <span className="hidden items-center gap-1 font-mono text-[10px] text-muted-foreground sm:flex">
-              Investigaciones <ChevronRight className="h-3 w-3" /> RIPE Atlas
-            </span>
-          </div>
+          <Link
+            href="/"
+            className="flex items-center gap-3 transition-opacity hover:opacity-85"
+            title="Volver al panel principal de investigaciones"
+          >
+            <div className="workspace-logo flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="text-sm font-semibold tracking-tight hover:text-primary transition-colors">NetScope</span>
+              <span className="hidden items-center gap-1 font-mono text-[10px] text-muted-foreground sm:flex">
+                <span className="hover:text-foreground transition-colors underline-offset-2 hover:underline">
+                  Investigaciones
+                </span>
+                <ChevronRight className="h-3 w-3" /> RIPE Atlas
+              </span>
+            </div>
+          </Link>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground"
+              title="Ver todas las investigaciones guardadas"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Investigaciones</span>
+            </Button>
+          </Link>
+
+          <Link href="/nueva">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5 font-mono text-xs shadow-sm active:scale-[0.98] transition-transform"
+              title="Iniciar una nueva investigación subiendo un archivo JSON"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Nueva Investigación</span>
+            </Button>
+          </Link>
+
+          <div className="mx-1 h-5 w-px bg-border hidden sm:block" aria-hidden="true" />
+
           <Badge variant="outline" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider">
             <span className="h-1.5 w-1.5 rounded-full bg-chart-3" aria-hidden="true" />
             {investigation ? `ID: ${investigation.id}` : "Cargando..."}

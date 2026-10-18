@@ -329,20 +329,44 @@
     line-height: 1.65 !important;
   }
 
-  /* Clean academic figures */
+  /* Clean academic figures & cards: MUST NEVER BE CUT ACROSS PAGES */
   figure,
-  .break-inside-avoid {
+  .break-inside-avoid,
+  [data-slot="card"],
+  .report-surface,
+  .report-chart-figure,
+  .report-table-figure,
+  .report-png-figure,
+  .report-interpretation,
+  .recharts-wrapper {
+    display: block !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
-    margin-top: 14px !important;
-    margin-bottom: 14px !important;
+  }
+
+  figure {
+    margin-top: 18px !important;
+    margin-bottom: 18px !important;
+    width: 100% !important;
+  }
+
+  /* Force block layout on containers inside chapters so Chromium pagination honors break-inside: avoid */
+  #chapter-4,
+  #chapter-4 > div,
+  .phase-section,
+  [id^="sec-4-"],
+  [data-slot="card-content"],
+  [data-slot="card-header"] {
+    display: block !important;
   }
 
   figcaption {
     color: #374151 !important;
     font-size: 8.5pt !important;
     font-style: italic !important;
-    margin-top: 4px !important;
+    margin-top: 6px !important;
+    display: block !important;
+    break-after: avoid !important;
   }
 
   /* Strip all card appearances in print: no borders, no rounded corners, no cards */
@@ -357,34 +381,42 @@
     padding: 0 !important;
   }
 
-  /* Academic formal tables */
+  /* Academic formal tables: compact font and padding so up to 10 columns fit Letter width */
   .report-table {
     border: none !important;
     background: transparent !important;
     overflow: visible !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 8px 0 !important;
   }
 
   .report-table table {
     width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
     border-collapse: collapse !important;
     border-top: 2px solid #000000 !important;
     border-bottom: 2px solid #000000 !important;
+    font-size: 7.2pt !important;
+    line-height: 1.25 !important;
   }
 
   .report-table thead {
     display: table-header-group !important;
-    border-bottom: 1px solid #000000 !important;
+    border-bottom: 1.5px solid #000000 !important;
   }
 
   .report-table th {
     color: #000000 !important;
     font-weight: 700 !important;
-    font-size: 8.5pt !important;
-    padding: 5px 6px !important;
-    border-bottom: 1px solid #000000 !important;
+    font-size: 6.8pt !important;
+    padding: 3px 3.5px !important;
+    border-bottom: 1.5px solid #000000 !important;
     background-color: #f1f5f9 !important;
+    line-height: 1.15 !important;
+    vertical-align: bottom !important;
+    letter-spacing: 0.01em !important;
   }
 
   .report-table tr {
@@ -395,8 +427,18 @@
 
   .report-table td {
     color: #111827 !important;
-    font-size: 8.5pt !important;
-    padding: 4px 6px !important;
+    font-size: 7.2pt !important;
+    padding: 2.5px 3.5px !important;
+    line-height: 1.25 !important;
+    vertical-align: middle !important;
+  }
+
+  .report-table th.numeric-col,
+  .report-table td.numeric-col {
+    white-space: nowrap !important;
+    text-align: right !important;
+    font-variant-numeric: tabular-nums !important;
+    font-family: var(--font-mono), monospace !important;
   }
 
   /* Turn badge pills into clean text inside tables */
@@ -407,17 +449,19 @@
     color: #111827 !important;
     padding: 0 !important;
     box-shadow: none !important;
+    white-space: inherit !important;
   }
 
   .report-table td span span.rounded-full {
     display: none !important;
   }
 
-  /* Vector charts / Recharts */
+  /* Vector charts / Recharts / SVGs */
   .recharts-responsive-container,
   svg {
     background: transparent !important;
     max-width: 100% !important;
+    overflow: visible !important;
   }
 
   .recharts-cartesian-axis-tick text,

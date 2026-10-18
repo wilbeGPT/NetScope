@@ -23,7 +23,7 @@ export function Fase2View({ data }: { data: FaseResponse }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 print:block">
         {elements.map((el, idx) => (
           <ElementRenderer key={`${el.type}-${el.id}-${idx}`} element={el} />
         ))}
