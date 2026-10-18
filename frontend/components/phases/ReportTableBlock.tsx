@@ -39,6 +39,41 @@ function formatValue(value: string | number): string {
 
 function formatColumnHeader(col: string): string {
   const map: Record<string, string> = {
+    // Fase 1
+    N: "N°",
+    Dest_IP: "IP Destino",
+    Probe_ID: "Sonda",
+    PROBE_ID: "Sonda",
+    "ID Sonda": "Sonda",
+    "ID de Sonda": "Sonda",
+    Total_Measurements: "Total Med.",
+    Successful_Reaches: "Éxitos",
+    "Success_Rate_%": "Éxito (%)",
+    "Estado de Medicion": "Estado",
+    Cantidad: "Cantidad",
+    Proporcion: "Proporción",
+    "Fecha y Hora (CST)": "Fecha / Hora",
+    "Dominio Objetivo": "Dominio",
+    "IP Resuelta": "IP Resuelta",
+    Primera_Conexion: "Primera Conexión",
+    Ultima_Conexion: "Última Conexión",
+    Total_Mediciones: "Total Med.",
+    Tiempo_Activo: "Tiempo Activo",
+    Mediciones_Perdidas: "Med. Perdidas",
+    "Disponibilidad (Uptime)": "Uptime (%)",
+    Paquetes_Enviados_Al_Destino: "Paq. Enviados",
+    Recibidos: "Recibidos",
+    Perdidos: "Perdidos",
+    "Exito (%)": "Éxito (%)",
+    "Perdida (%)": "Pérdida (%)",
+    Patron: "Patrón",
+    Mediciones: "Mediciones",
+    "Proporcion (%)": "Proporción (%)",
+    Diagnostico: "Diagnóstico",
+
+    // Fase 2
+    Rol: "Rol",
+    "Proveedor / ASN": "Proveedor / ASN",
     SALTOS_PROMEDIO: "Saltos Prom.",
     Saltos_Promedio: "Saltos Prom.",
     MIN_RTT: "Min RTT",
@@ -54,32 +89,54 @@ function formatColumnHeader(col: string): string {
     "PACKET_LOSS_%": "Pérdida (%)",
     "Packet_Loss_%": "Pérdida (%)",
     "Loss_%": "Pérdida (%)",
-    Probe_ID: "Sonda",
-    PROBE_ID: "Sonda",
-    "ID Sonda": "Sonda",
-    Dest_IP: "IP Destino",
-    Total_Measurements: "Total Med.",
-    Successful_Reaches: "Éxitos",
-    "Success_Rate_%": "Éxito (%)",
-    Primera_Conexion: "Primera Conexión",
-    Ultima_Conexion: "Última Conexión",
-    Tiempo_Activo: "Tiempo Activo",
-    Mediciones_Perdidas: "Med. Perdidas",
-    "Disponibilidad (Uptime)": "Uptime (%)",
-    Paquetes_Enviados_Al_Destino: "Paq. Enviados",
-    Recibidos: "Recibidos",
-    Perdidos: "Perdidos",
-    "Exito (%)": "Éxito (%)",
-    "Perdida (%)": "Pérdida (%)",
-    Hop: "Salto",
-    IP: "Dirección IP",
+
+    // Fase 3
+    "ISP / Proveedor": "Proveedor",
     ASN: "ASN",
+    "Pais Registro": "País Reg.",
+    Sondas: "Sondas",
+    "IP Publica": "IP Pública",
+    "Organizacion oficial RDAP": "Organización RDAP",
+    Organizacion: "Organización",
+
+    // Fase 4
     ISP: "Proveedor",
+    "Hop anterior": "Salto Anterior",
+    "RTT anterior (ms)": "RTT Ant.",
+    "Hop inflado": "Salto Inflado",
+    "RTT inflado (ms)": "RTT Infl.",
+    "Delta (ms)": "Delta (ms)",
+    Hop: "Salto",
+    "IP del nodo": "IP del Nodo",
+    Propietario: "Propietario / Red",
+    Ubicacion: "Ubicación",
+    Pais: "País",
+    "RTT (ms)": "RTT (ms)",
     "RTT local (ms)": "RTT Local",
     "RTT total destino (ms)": "RTT Destino",
-    "Hops totales": "Saltos",
     "Overhead Path Inflation (ms)": "Overhead",
     "Exceso vs linea base (ms)": "Exceso Base",
+    "Hops totales": "Saltos",
+
+    // Fase 5
+    "Manana 7-12h": "Mañana (7-12h)",
+    "Tarde 13-17h": "Tarde (13-17h)",
+    "Noche 18-21h": "Noche (18-21h)",
+    "Valle 0-6h/22-23h": "Valle (0-6h/22-23h)",
+    "Delta pico vs valle": "Delta Pico-Valle",
+    "Jitter mediano": "Jitter Med.",
+    "Jitter promedio": "Jitter Prom.",
+    "Jitter p95": "Jitter p95",
+    "Jitter maximo": "Jitter Máx.",
+    "n traceroutes": "Traceroutes (n)",
+    Dia: "Día",
+    Tipo: "Tipo Día",
+    "Mediana RTT": "Mediana RTT",
+    "Promedio RTT": "Prom. RTT",
+    StdDev: "StdDev",
+    p95: "p95",
+    "n paquetes": "Paquetes (n)",
+    Marca: "Estado",
   }
   if (map[col]) return map[col]
   return col.replace(/_/g, " ")
@@ -94,19 +151,27 @@ const ISP_META: Record<string, { dot: string }> = {
   "UES": { dot: "bg-purple-500" },
   "Navega GT": { dot: "bg-fuchsia-500" },
   "Globalnet HN": { dot: "bg-slate-500" },
+  "El Salvador Net": { dot: "bg-indigo-500" },
+  "AS262179": { dot: "bg-zinc-500" },
 }
 
 function cleanIspName(name: string): string {
   if (!name) return ""
   const upper = name.toUpperCase()
-  if (upper.includes("CLARO") || upper.includes("GUATEMALA") || upper.includes("CTE") || upper.includes("AS14754")) return "Claro SV"
-  if (upper.includes("CONECTIVE") || upper.includes("AS264635")) return "Conective SV"
-  if (upper.includes("GLOBALNET") || upper.includes("AS27729")) return "Globalnet HN"
-  if (upper.includes("LIBERTY") || upper.includes("COLUMBUS") || upper.includes("AS262199")) return "Liberty SV"
-  if (upper.includes("TELEFONICA") || upper.includes("MOVISTAR") || upper.includes("AS12127")) return "Movistar SV"
-  if (upper.includes("NAVEGA") || upper.includes("TIGO") || upper.includes("AS26617")) return "Navega GT"
-  if (upper.includes("CENTROAMERICANA") || upper.includes("UCA") || upper.includes("AS61502")) return "UCA"
-  if (upper.includes("UNIVERSIDAD DE EL SALVADOR") || upper === "UES" || upper.includes("AS264720")) return "UES"
+  const asnMatch = name.match(/AS\d+/i)
+  const asn = asnMatch ? ` (${asnMatch[0].toUpperCase()})` : ""
+
+  if (upper.includes("CLARO") || upper.includes("GUATEMALA") || upper.includes("CTE") || upper.includes("AS14754")) return `Claro SV${asn}`
+  if (upper.includes("CONECTIVE") || upper.includes("AS264635")) return `Conective SV${asn}`
+  if (upper.includes("GLOBALNET") || upper.includes("AS27729")) return `Globalnet HN${asn}`
+  if (upper.includes("LIBERTY") || upper.includes("COLUMBUS") || upper.includes("AS262199")) return `Liberty SV${asn}`
+  if (upper.includes("TELEFONICA") || upper.includes("MOVISTAR") || upper.includes("AS12127")) return `Movistar SV${asn}`
+  if (upper.includes("NAVEGA") || upper.includes("TIGO") || upper.includes("AS26617")) return `Navega GT${asn}`
+  if (upper.includes("CENTROAMERICANA") || upper.includes("CANAS") || upper.includes("CAÑAS") || upper.includes("UCA") || upper.includes("AS61502")) return `UCA${asn}`
+  if (upper.includes("UNIVERSIDAD DE EL SALVADOR") || upper === "UES" || upper.includes("AS264720")) return `UES${asn}`
+  if (upper.includes("EL SALVADOR NETWORK") || upper.includes("AS16906")) return `El Salvador Net${asn}`
+  if (upper.includes("262179")) return `AS262179${asn}`
+  if (upper.includes("PROBE 64366")) return `Sonda 64366${asn}`
   return name
 }
 
@@ -130,8 +195,8 @@ function renderCellContent(column: string, rawValue: string | number | undefined
   const formatted = formatValue(rawValue)
   const isRowSummary = row ? isSummaryRow(row) : false
 
-  // 1. ISP / Proveedor
-  if (/^(ISP|Proveedor|ISP\s*\/\s*Proveedor)$/i.test(column)) {
+  // 1. ISP / Proveedor / ASN
+  if (/ISP|Proveedor/i.test(column)) {
     const rawStr = String(rawValue).trim()
     if (rawStr.toUpperCase() === "TOTAL" || rawStr.toLowerCase().includes("global")) {
       return (
@@ -142,19 +207,20 @@ function renderCellContent(column: string, rawValue: string | number | undefined
       )
     }
     const clean = cleanIspName(rawStr)
-    const meta = ISP_META[clean]
+    const baseIsp = clean.replace(/\s*\(AS\d+\)$/i, "").trim()
+    const meta = ISP_META[baseIsp] || ISP_META[clean]
     if (meta) {
       return (
-        <span className="inline-flex items-center gap-2 font-medium text-foreground">
-          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dot} ring-2 ring-current/20`} />
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground whitespace-nowrap">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot} ring-1 ring-current/20`} />
           <span>{clean}</span>
         </span>
       )
     }
     return (
-      <span className="inline-flex items-center gap-1.5 text-foreground/90">
+      <span className="inline-flex items-center gap-1.5 text-foreground/90 whitespace-nowrap">
         <span className="h-2 w-2 shrink-0 rounded-full bg-slate-400/60" />
-        <span>{rawStr}</span>
+        <span>{clean}</span>
       </span>
     )
   }
@@ -605,10 +671,10 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
             </div>
           )}
 
-          <div className="report-table overflow-x-auto">
+          <div className="report-table overflow-x-auto print:overflow-visible print:w-full">
             <table
               aria-label={`${prefix} ${table.id}. ${table.title}`}
-              className="w-full border-collapse font-sans text-[12px] text-foreground"
+              className="w-full border-collapse font-sans text-[12px] print:text-[6.8pt] text-foreground print:w-full print:min-w-0"
             >
               <thead>
                 <tr className="border-b border-border/60 bg-muted/30 text-muted-foreground print:bg-[#f1f5f9]">
@@ -618,7 +684,7 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
                     return (
                       <th
                         key={column}
-                        className={`border-b border-border px-3 py-2.5 print:px-1 print:py-1 font-mono text-[10px] print:text-[7pt] font-semibold uppercase tracking-wider ${
+                        className={`border-b border-border px-3 py-2.5 print:px-0.5 print:py-0.5 font-mono text-[10px] print:text-[6.5pt] font-semibold uppercase tracking-wider ${
                           isNum ? "text-right font-mono tabular-nums numeric-col whitespace-nowrap print:whitespace-nowrap" : isId ? "text-center whitespace-nowrap" : "text-left whitespace-normal"
                         }`}
                       >
@@ -674,12 +740,12 @@ export function ReportTableBlock({ table }: { table: ReportTable & { type?: stri
                           return (
                             <td
                               key={column}
-                              className={`px-3 py-2.5 print:px-1 print:py-1 align-middle text-[11px] print:text-[7.2pt] ${
+                              className={`px-3 py-2.5 print:px-0.5 print:py-0.5 align-middle text-[11px] print:text-[6.8pt] ${
                                 isNum
                                   ? "text-right font-mono tabular-nums whitespace-nowrap print:whitespace-nowrap numeric-col"
                                   : isId
                                   ? "text-center font-mono whitespace-nowrap print:whitespace-nowrap"
-                                  : "text-left whitespace-normal break-words max-w-[280px] print:max-w-[140px]"
+                                  : "text-left whitespace-normal break-words max-w-[280px] print:max-w-[125px]"
                               }`}
                             >
                               {renderCellContent(column, row[column], row)}

@@ -202,7 +202,7 @@
 
 @media print {
   @page {
-    margin: 16mm 14mm;
+    margin: 12mm 10mm;
     size: letter;
   }
 
@@ -394,12 +394,14 @@
   .report-table table {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
+    min-width: unset !important;
     table-layout: auto !important;
     border-collapse: collapse !important;
     border-top: 2px solid #000000 !important;
     border-bottom: 2px solid #000000 !important;
-    font-size: 7.2pt !important;
-    line-height: 1.25 !important;
+    font-size: 6.8pt !important;
+    line-height: 1.2 !important;
   }
 
   .report-table thead {
@@ -410,8 +412,8 @@
   .report-table th {
     color: #000000 !important;
     font-weight: 700 !important;
-    font-size: 6.8pt !important;
-    padding: 3px 3.5px !important;
+    font-size: 6.5pt !important;
+    padding: 2.5px 2px !important;
     border-bottom: 1.5px solid #000000 !important;
     background-color: #f1f5f9 !important;
     line-height: 1.15 !important;
@@ -427,9 +429,9 @@
 
   .report-table td {
     color: #111827 !important;
-    font-size: 7.2pt !important;
-    padding: 2.5px 3.5px !important;
-    line-height: 1.25 !important;
+    font-size: 6.8pt !important;
+    padding: 2px 2px !important;
+    line-height: 1.2 !important;
     vertical-align: middle !important;
   }
 
